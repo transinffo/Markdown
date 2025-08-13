@@ -4,7 +4,7 @@
 
 ## ✨ Основы синтаксиса
 
-```css
+css
 /* Комментарий */
 .selector {
   property: value;
@@ -16,7 +16,7 @@ body {
   color: #333;
   font-family: 'Inter', Arial, sans-serif;
 }
-```
+
 
 ---
 
