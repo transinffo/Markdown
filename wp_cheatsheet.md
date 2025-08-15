@@ -7,7 +7,6 @@
 ### Код для functions.php
 
 ```php
-<?php
 //acf/load_field — заполняем select отзывами (работает и в постах)
               add_filter('acf/load_field/name=selected_reviews', function ($field) {
                   // Получаем значение поля 'google_reviews_json' из текущего поста
@@ -151,8 +150,6 @@
                   $args['post_mime_type'] = ['application/json'];
                   return $args;
               }, 10, 3);
-?>
-
 ```
 
 ---
