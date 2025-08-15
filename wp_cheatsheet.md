@@ -156,6 +156,18 @@
                   $args['post_mime_type'] = ['application/json'];
                   return $args;
               }, 10, 3);
+
+            // увеличил высоту select поля selected_reviews в админке----------------------------------
+            function my_acf_admin_styles() {
+                echo '<style>
+                    div[data-name="selected_reviews"] select
+                    {
+                        height: 300px !important;
+                    }
+                </style>';
+            }
+            add_action('admin_head', 'my_acf_admin_styles');
+            // увеличил высоту select поля selected_reviews в админке----------------------------------
 ```
 
 ---
