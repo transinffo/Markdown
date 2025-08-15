@@ -13,7 +13,7 @@
 ### Код для functions.php
 
 ```php
-//acf/load_field — заполняем select отзывами (работает и в постах)
+//Отзывы Google
               add_filter('acf/load_field/name=selected_reviews', function ($field) {
                   // Получаем значение поля 'google_reviews_json' из текущего поста
                   $post_id = get_the_ID();
@@ -145,7 +145,7 @@
                   echo '<div style="margin-top:10px; background: #f9f9f9; padding:10px; border-left: 4px solid #0073aa;">';
                   echo '<strong>📋 Шорткод для вставки:</strong><br>';
                   echo '<code style="font-size: 16px;">[selected_google_reviews]</code>';
-                  echo '<p style="margin: 5px 0 0; font-size: 13px;">Вставьте этот шорткод в контент этой записи, чтобы вывести отзывы.</p>';
+                  echo '<p style="margin: 5px 0 0; font-size: 13px;">Вставьте этот шорткод в контент этой страницы, чтобы вывести отзывы.</p>';
                   echo '</div>';
               });
 
