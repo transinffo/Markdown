@@ -6,6 +6,12 @@
 ### Добавляем в functions.php:
 
 ```php
+//Функция для подсчета времени чтения статьи
+//стандартное поле контент
+//<?=get_reading_time()?><?pll_e('time');?>
+//acf поле
+//<?=get_reading_time(get_the_ID(), 'desc_post_treatment')?><?pll_e('time');?>
+
 function get_reading_time($post_id = null, $field_name = null) {
     if (!$post_id) {
         $post_id = get_the_ID();
