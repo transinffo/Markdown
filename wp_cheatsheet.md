@@ -1,5 +1,41 @@
 # 🌟 WordPress Cheat Sheet
 
+
+## ✅  Функция для подсчета времени чтения статьи
+
+### Добавляем в functions.php:
+
+```php
+function get_reading_time($post_id = null, $field_name = null) {
+    if (!$post_id) {
+        $post_id = get_the_ID();
+    }
+
+    // Если указано ACF-поле → берём его
+    if ($field_name) {
+        $content = get_field($field_name, $post_id);
+    } else {
+        // иначе стандартный контент
+        $content = get_post_field('post_content', $post_id);
+    }
+
+    if (!$content) {
+        return 1;
+    }
+
+    $content = strip_tags($content);
+
+    // Подсчёт слов: кириллица + латиница + цифры
+    preg_match_all('/[\p{L}\p{N}\']+/u', $content, $matches);
+    $word_count = count($matches[0]);
+
+    // Средняя скорость чтения
+    $words_per_minute = 180;
+    $minutes = ceil($word_count / $words_per_minute);
+
+    return $minutes < 1 ? 1 : $minutes;
+}
+```
 ---
 
 ## ✅  Отзывы Google
