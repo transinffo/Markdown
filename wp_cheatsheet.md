@@ -8,7 +8,7 @@
 ```php
 //Функция для подсчета времени чтения статьи
 //стандартное поле контент
-//<?=get_reading_time()?><? pll_e('time');?>
+//<?php echo get_reading_time()?><?php pll_e('time');?>
 //acf поле
 //<?=get_reading_time(get_the_ID(), 'desc_post_treatment')?><? pll_e('time');?>
 
