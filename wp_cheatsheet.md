@@ -8,9 +8,9 @@
 ```php
 //Функция для подсчета времени чтения статьи
 //стандартное поле контент
-//<?=get_reading_time() . ' ' . pll__('time'); ?>
+//<?=get_reading_time() . ' ' . pll__('time')? >
 //acf поле
-//<?=get_reading_time(get_the_ID(), 'desc_post_treatment') . ' ' . pll__('time'); ?>
+//<?=get_reading_time(get_the_ID(), 'desc_post_treatment') . ' ' . pll__('time')? >
 
 function get_reading_time($post_id = null, $field_name = null) {
     if (!$post_id) {
