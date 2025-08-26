@@ -3,6 +3,12 @@
 ---
 
 ## 🏷️ Прокрутка внутреннего текста у любого элмента при ховере .main_btn
+
+```html
+<button type="submit" class="main_btn"><span>Применить</span></button>
+<a href="#" class="main_btn"><span>Применить</span></a>
+```
+
 ```css
 .main_btn{
   background: coral;
