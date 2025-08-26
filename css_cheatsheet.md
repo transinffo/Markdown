@@ -16,6 +16,10 @@
   padding: 6px 20px;
   border-radius: 6px;
   display: inline-block;
+  text-decoration: none;
+  text-transform: none;
+  border: none;
+  display: inline-block;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
