@@ -2,6 +2,42 @@
 
 ---
 
+## 🏷️ Прокрутка внутреннего текста у любого элмента при ховере .main_btn
+```css
+.main_btn{
+  background: coral;
+  color: #fff;
+  padding: 6px 20px;
+  border-radius: 6px;
+  display: inline-block;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+}
+
+.main_btn span {
+  display: block;
+}
+
+@keyframes scrollDown {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(100%); }
+  50.01% { transform: translateY(-100%); } 
+  100% { transform: translateY(0); } 
+}
+
+/* При ховере запускаем анимацию */
+.main_btn:hover span {
+  animation-name: scrollDown;
+  animation-duration: 0.5s; 
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-iteration-count: 1;
+}
+```
+
+---
+
 ## 🏷️ Селекторы
 
 ```css
