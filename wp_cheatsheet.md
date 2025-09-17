@@ -1,5 +1,18 @@
 # 🌟 WordPress Cheat Sheet
 
+## ✅  Глобальный массив поста
+```php
+global $post;
+$post_data = get_post( get_the_ID(), ARRAY_A );
+
+// добавим все метаполя
+$post_data['meta'] = get_post_meta( get_the_ID() );
+
+echo '<pre>';
+print_r($post_data);
+echo '</pre>';
+```
+---
 
 ## ✅  Функция для подсчета времени чтения статьи
 
