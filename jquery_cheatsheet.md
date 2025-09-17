@@ -1,5 +1,17 @@
 # 🌟 jQuery Cheat Sheet for Front-End Developers
 
+## ✅ Координаты указателя в title
+
+```html
+$(document).ready(function(){
+    $(document).on('mousemove', function(e){
+      document.title = 'x: ' + e.pageX + ' y: ' + e.pageY;
+    });
+});
+```
+
+---
+
 ## ✅ Базовое подключение
 
 ```html
