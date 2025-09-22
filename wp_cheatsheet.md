@@ -8,7 +8,7 @@
 ```php
 define('FLRT_PERMALINKS_ENABLED', true); //нужно для pretty urls Filter Everything
 ```
-### Создаем плагин с кодом в папке filter-pretty-urls файл filter-pretty-urls.php:
+### Создаем плагин с кодом в папке /wp-content/plugins/filter-pretty-urls файл filter-pretty-urls.php:
 
 ```php
 <?php
