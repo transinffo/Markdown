@@ -1,5 +1,85 @@
 # 🌟 WordPress Cheat Sheet
 
+
+## ✅  Pretty url для Filter Everything free
+
+### Добавляем в wp-config.php перед /* That's all, stop editing! Happy publishing. */:
+
+```php
+define('FLRT_PERMALINKS_ENABLED', true); //нужно для pretty urls Filter Everything
+```
+### Создаем плагин с кодом в папке filter-pretty-urls файл filter-pretty-urls.php:
+
+```php
+<?php
+/**
+ * Plugin Name: Filter Everything Pretty URLs (Free Hack)
+ * Description: Делает красивые урлы для Filter Everything free (type и manuf)
+ * Author: Roman Fix
+ */
+
+if ( ! defined('ABSPATH') ) exit;
+
+/**
+ * 1. Генерация красивого урла вместо query vars
+ */
+add_filter('flrt_get_filter_url', function($url, $filters, $args){
+    if( empty($filters) ){
+        return $url;
+    }
+
+    // Базовый URL (текущая категория)
+    $base = strtok($url, '?');
+
+    $segments = [];
+
+    foreach( $filters as $filter ){
+        $name   = $filter['taxonomy'];   // например type или manuf
+        $values = implode('-', $filter['values']);
+        $segments[] = $name . '-' . $values;
+    }
+
+    return trailingslashit( $base . '/' . implode('/', $segments) );
+}, 20, 3);
+
+
+/**
+ * 2. Правила перезаписи: /.../type-aaa-bbb/manuf-ccc/
+ */
+add_action('init', function(){
+
+    add_rewrite_rule(
+        '^product-category/([^/]+(?:/[^/]+)*)/type-([^/]+)/manuf-([^/]+)/?$',
+        'index.php?category_name=$matches[1]&type=$matches[2]&manuf=$matches[3]',
+        'top'
+    );
+
+    add_rewrite_rule(
+        '^product-category/([^/]+(?:/[^/]+)*)/type-([^/]+)/?$',
+        'index.php?category_name=$matches[1]&type=$matches[2]',
+        'top'
+    );
+
+    add_rewrite_rule(
+        '^product-category/([^/]+(?:/[^/]+)*)/manuf-([^/]+)/?$',
+        'index.php?category_name=$matches[1]&manuf=$matches[2]',
+        'top'
+    );
+});
+
+/**
+ * 3. Регистрируем переменные, чтобы WP их понимал
+ */
+add_filter('query_vars', function($vars){
+    $vars[] = 'type';
+    $vars[] = 'manuf';
+    return $vars;
+});
+
+```
+
+---
+
 ## ✅  Глобальный массив поста
 ```php
 global $post;
