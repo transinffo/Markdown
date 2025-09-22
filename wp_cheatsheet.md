@@ -2,13 +2,15 @@
 
 ## ✅  Получить данные со страницы Общие настройки
 ```php
-get_option( 'blogdescription' ) //подзаголовок (описание сайта).
+get_option( 'blogname' ); //название сайта
 
-get_option( 'admin_email' ) //email администратора.
+get_option( 'blogdescription' ) //подзаголовок (описание сайта)
 
-get_option( 'siteurl' ) //URL сайта.
+get_option( 'admin_email' ) //email администратора
 
-get_option( 'home' ) //адрес главной страницы.
+get_option( 'siteurl' ) //URL сайта
+
+get_option( 'home' ) //адрес главной страницы
 ```
 ---
 
