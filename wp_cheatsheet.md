@@ -1,5 +1,167 @@
 # 🌟 WordPress Cheat Sheet
 
+## ✅  сделать копии постов на русском языке для Polylang (язык контента по умолчанию украинский)
+```php
+// Клонируем пост(ы) на украинском языке на русский с Polylang
+// https://site.com/wp-admin/?clone_post=2315 - клонируем пост с ID 2315
+// https://site.com/wp-admin/?clone_post=all  - клонируем все посты
+
+add_action('admin_init', function () {
+    if (!current_user_can('manage_options')) return;
+    if (!isset($_GET['clone_post'])) return;
+
+    // Проверка наличия Polylang
+    if (!function_exists('pll_get_post_language') || !function_exists('pll_save_post_translations')) {
+        echo "Polylang не активирован или отсутствуют функции Polylang.";
+        exit;
+    }
+
+    $clone_param = $_GET['clone_post'];
+    $post_ids_to_clone = [];
+
+    // Если параметр 'all', получаем все посты на украинском
+    if ($clone_param === 'all') {
+        $uk_posts = new WP_Query([
+            'post_type'      => 'any',
+            'lang'           => 'uk',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+        ]);
+        $post_ids_to_clone = $uk_posts->posts;
+    } else {
+        // Иначе, клонируем только один пост по ID
+        $src_id = intval($clone_param);
+        if ($src_id > 0) {
+            $post_ids_to_clone[] = $src_id;
+        }
+    }
+
+    if (empty($post_ids_to_clone)) {
+        echo "Посты для клонирования не найдены.";
+        exit;
+    }
+
+    $cloned_count = 0;
+    $log_messages = [];
+
+    foreach ($post_ids_to_clone as $src_id) {
+        $src = get_post($src_id);
+        if (!$src) {
+            $log_messages[] = "Источник (ID {$src_id}) не найден.";
+            continue;
+        }
+
+        $src_lang = pll_get_post_language($src_id);
+        if ($src_lang !== 'uk') {
+            $log_messages[] = "Источник (ID {$src_id}) не помечен как украинский (lang = {$src_lang}).";
+            continue;
+        }
+
+        // Проверяем, есть ли уже перевод
+        $existing = pll_get_post_translations($src_id);
+        if (!empty($existing['ru'])) {
+            $log_messages[] = "У исходного поста (ID {$src_id}) уже есть русская версия (ID: {$existing['ru']}).";
+            continue;
+        }
+
+        // создаём пост-клон
+        $new_id = wp_insert_post([
+            'post_title'     => $src->post_title,
+            'post_content'   => $src->post_content,
+            'post_excerpt'   => $src->post_excerpt,
+            'post_status'    => $src->post_status,
+            'post_type'      => $src->post_type,
+            'post_author'    => $src->post_author,
+            'post_parent'    => $src->post_parent,
+            'menu_order'     => $src->menu_order,
+            'comment_status' => $src->comment_status,
+            'ping_status'    => $src->ping_status,
+        ]);
+
+        if (!$new_id) {
+            $log_messages[] = "Не удалось создать пост для ID {$src_id}.";
+            continue;
+        }
+
+        // featured image
+        $thumb_id = get_post_thumbnail_id($src_id);
+        if ($thumb_id) {
+            set_post_thumbnail($new_id, $thumb_id);
+            update_post_meta($new_id, '_thumbnail_id', $thumb_id);
+        }
+
+        // Список ACF полей
+        $acf_keys = [
+            'product_stock',
+            'product_sale',
+            'product_short_desc',
+            'product_desc',
+            'product_charact',
+        ];
+
+        // специальные мета
+        $special_meta = [
+            '_product_image_gallery',
+            '_wp_page_template',
+            '_thumbnail_id',
+        ];
+
+        // Копируем указанные ACF поля + их мета-ключи
+        foreach ($acf_keys as $k) {
+            $vals = get_post_meta($src_id, $k);
+            if ($vals) {
+                delete_post_meta($new_id, $k);
+                foreach ($vals as $v) add_post_meta($new_id, $k, maybe_unserialize($v));
+            }
+            $meta_key_key = "_{$k}";
+            $vals2 = get_post_meta($src_id, $meta_key_key);
+            if ($vals2) {
+                delete_post_meta($new_id, $meta_key_key);
+                foreach ($vals2 as $v) add_post_meta($new_id, $meta_key_key, maybe_unserialize($v));
+            }
+        }
+
+        // Копируем специальные мета
+        foreach ($special_meta as $m) {
+            $vals = get_post_meta($src_id, $m);
+            if ($vals) {
+                delete_post_meta($new_id, $m);
+                foreach ($vals as $v) add_post_meta($new_id, $m, maybe_unserialize($v));
+            }
+        }
+
+        // Копируем остальные пользовательские мета
+        $all_meta = get_post_meta($src_id);
+        foreach ($all_meta as $meta_key => $values) {
+            if (in_array($meta_key, array_merge($acf_keys, array_map(function($k){ return "_{$k}"; }, $acf_keys), $special_meta), true)) {
+                continue;
+            }
+            $lower = strtolower($meta_key);
+            if (strpos($lower, 'pll') !== false || strpos($lower, '_pll') !== false || strpos($lower, 'icl_') !== false || $meta_key === '_translations' || $meta_key === 'translations') {
+                continue;
+            }
+            foreach ($values as $v) {
+                add_post_meta($new_id, $meta_key, maybe_unserialize($v));
+            }
+        }
+
+        // Устанавливаем язык и связываем переводы
+        pll_set_post_language($new_id, 'ru');
+        pll_save_post_translations(['uk' => $src_id, 'ru' => $new_id]);
+        
+        $cloned_count++;
+        $log_messages[] = "Пост ID {$src_id} успешно клонирован в новый пост ID {$new_id}.";
+    }
+
+    echo "Готово. Создано {$cloned_count} новых постов.";
+    echo "<h3>Подробности:</h3>";
+    echo "<ul><li>" . implode("</li><li>", $log_messages) . "</li></ul>";
+    exit;
+});
+```
+---
+
 ## ✅  Получить данные со страницы Общие настройки
 ```php
 get_option( 'blogname' ); //название сайта
