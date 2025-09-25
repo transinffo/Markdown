@@ -2,6 +2,7 @@
 
 ## ✅  сделать копии постов на русском языке для Polylang (язык контента по умолчанию украинский)
 ```php
+// код для functions.php
 // Клонируем пост(ы) на украинском языке на русский с Polylang
 // https://site.com/wp-admin/?clone_post=2315 - клонируем пост с ID 2315
 // https://site.com/wp-admin/?clone_post=all  - клонируем все посты
