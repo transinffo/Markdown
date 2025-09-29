@@ -163,6 +163,86 @@ add_action('admin_init', function () {
 ```
 ---
 
+# ✅ Памятка по выводу основного контента в WordPress
+
+```php
+// Заголовок поста
+<?php the_title(); ?>
+
+// Контент поста
+<?php the_content(); ?>
+
+// Короткое описание (excerpt)
+<?php the_excerpt(); ?>
+
+// Ссылка на пост
+<?php the_permalink(); ?>
+
+// Дата публикации
+<?php the_date(); ?>
+
+// Автор поста
+<?php the_author(); ?>
+
+// ID поста
+<?php the_ID(); ?>
+
+// Категории поста
+<?php the_category(', '); ?>
+
+// Теги поста
+<?php the_tags(); ?>
+
+// Миниатюра поста (Featured Image)
+<?php if ( has_post_thumbnail() ) {
+    the_post_thumbnail('full'); // Размеры: 'thumbnail', 'medium', 'large', 'full'
+} ?>
+
+// Цикл WordPress (The Loop)
+<?php if ( have_posts() ) : while ( have_posts() ) : the_post(); ?>
+    <h2><?php the_title(); ?></h2>
+    <div><?php the_content(); ?></div>
+<?php endwhile; endif; ?>
+
+// Произвольные поля (Custom Fields)
+<?php echo get_post_meta(get_the_ID(), 'meta_key', true); ?>
+
+// ACF поля
+<?php the_field('acf_field_name'); ?>
+
+// Проверка наличия постов
+<?php if ( have_posts() ) : ?>
+    <!-- есть посты -->
+<?php else : ?>
+    <!-- постов нет -->
+<?php endif; ?>
+
+// Ссылки на предыдущий и следующий пост
+<?php previous_post_link(); ?>
+<?php next_post_link(); ?>
+
+// WP_Query – получение списка постов
+<?php
+$args = array(
+    'post_type' => 'post',
+    'posts_per_page' => 5
+);
+$loop = new WP_Query($args);
+while ($loop->have_posts()) : $loop->the_post();
+    the_title();
+    the_excerpt();
+endwhile;
+wp_reset_postdata();
+?>
+
+// Получение заголовка и ссылки страницы по ID
+<?php echo get_the_title($post_id); ?>
+<?php echo get_permalink($post_id); ?>
+
+// Получение текущего URL поста
+<?php echo get_permalink(); ?>
+
+
 ## ✅  Получить данные со страницы Общие настройки
 ```php
 get_option( 'blogname' ); //название сайта
