@@ -1,5 +1,82 @@
 # 🌟 WordPress Cheat Sheet
 
+## ✅  Добавляет CSS-класс в <body>, соответствующий активному шаблону категории.
+
+### Кастомные шаблоны должны лежать в /template-parts, например:
+
+/theme/template-parts/template-analizy-i-ceny.php
+
+### А acf поля (да\нет) должны быть вида:
+
+is_template_analizy_i_ceny
+
+### Новый код для archive.php:
+```php
+<?php
+/**
+ * Универсальный шаблон архива категорий
+ */
+
+get_header();
+
+if ( is_category() ) {
+    $category = get_queried_object();
+    $fields = get_fields( $category );
+
+    if ( $fields && is_array( $fields ) ) {
+        foreach ( $fields as $field_key => $field_value ) {
+            // Ищем поля вида is_template_*
+            if ( strpos( $field_key, 'is_template_' ) === 0 && $field_value ) {
+                // Преобразуем ключ в имя файла шаблона
+                // Пример: is_template_analizy_i_ceny_group → template-analizy-i-ceny-group.php
+                $template_slug = str_replace( '_', '-', substr( $field_key, strlen( 'is_template_' ) ) );
+                $template_file = __DIR__ . '/template-parts/template-' . $template_slug . '.php';
+
+                if ( file_exists( $template_file ) ) {
+                    include_once $template_file;
+                    get_footer();
+                    exit;
+                }
+            }
+        }
+    }
+
+    // Если ничего не найдено — шаблон по умолчанию
+    include_once __DIR__ . '/archive-default.php';
+}
+
+get_footer();
+```
+### Добавляем в functions.php:
+```php
+/**
+ * Добавляет CSS-класс в <body>, соответствующий активному шаблону категории.
+ */
+function qlab_custom_category_body_class( $classes ) {
+    if ( is_category() ) {
+        $category = get_queried_object();
+        $fields = get_fields( $category );
+
+        if ( $fields && is_array( $fields ) ) {
+            foreach ( $fields as $field_key => $field_value ) {
+                if ( strpos( $field_key, 'is_template_' ) === 0 && $field_value ) {
+                    $template_slug = 'template-' . str_replace( '_', '-', substr( $field_key, strlen( 'is_template_' ) ) );
+                    $classes[] = sanitize_html_class( $template_slug );
+                    return $classes; // сразу выходим, чтобы не добавлять другие
+                }
+            }
+        }
+
+        // По умолчанию
+        $classes[] = 'template-archive-default';
+    }
+
+    return $classes;
+}
+add_filter( 'body_class', 'qlab_custom_category_body_class' );
+```
+---
+
 ## ✅  сделать копии постов на русском языке для Polylang (язык контента по умолчанию украинский)
 ```php
 // код для functions.php
