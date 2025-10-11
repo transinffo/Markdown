@@ -4,7 +4,7 @@
 ## ✅ 2 варианта языка в содержимом тега в зависимости от значения атрибута lang тега html:
 ### Используем так:
 ```html
-<h2 class="checkout-title" data-lang-uk="Ваш кошик" data-lang-ru="Ваша корзина"></h2>
+<h2 class="checkout-title" data-lang-uk="ukkk" data-lang-ru="ruuu"></h2>
 ```
 ```html
 $(document).ready(function(){
