@@ -5,18 +5,40 @@
 ### Используем так:
 ```html
 <h2 class="checkout-title" data-lang-uk="ukkk" data-lang-ru="ruuu"></h2>
+<input type="text" value="1" placeholder="украинский текст|русский текст">
 ```
 ```html
+function applyLanguageTranslation() {
+    const lang = $('html').attr('lang');
+    const langIndex = (lang === 'uk') ? 0 : 1;
+    
+    const targetAttr = (lang === 'uk') ? 'data-lang-uk' : 'data-lang-ru'; 
+
+    $('[data-lang-uk]').each(function() {
+        const translation = $(this).attr(targetAttr);
+        if (translation) {
+            $(this).text(translation);
+        }
+    });
+
+    $('[placeholder]').each(function() {
+        const placeholderText = $(this).attr('placeholder');
+        
+        if (placeholderText && placeholderText.includes('|')) {
+            const translations = placeholderText.split('|');
+            
+            if (translations.length > langIndex) {
+                $(this).attr('placeholder', translations[langIndex].trim());
+            }
+        }
+    });
+}
+// Запускаем при загрузке страницы для статичных элементов
 $(document).ready(function(){
-  const lang = $('html').attr('lang');
-  $('[data-lang-uk]').each(function() {
-    if (lang === 'uk') {
-      $(this).text($(this).data('lang-uk'));
-    } else if (lang === 'ru-RU') {
-      $(this).text($(this).data('lang-ru'));
-    }
-  });
+    applyLanguageTranslation();
 });
+
+//если отрисовываем динамический контент, то добавляем в функцию рендера  applyLanguageTranslation();
 ```
 
 ---
