@@ -2,36 +2,32 @@
 
 ## 📦 Класс ibg
 
-```html
-<style>
-
-	.ibg {
+```css
+.ibg {
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
   position: relative;
 }
-
 .ibg img {
   display: none; 
 }
+```
 
-</style>
-
-
+```html
 <div class="ibg">
-  <img src="image/banner-desktop.webp" alt="фон для компьютера" class="desktop">
-  <img src="image/banner-mobile.webp" alt="фон для телефона" class="mobile">
+  <img src="image/banner-desktop.webp" alt="фон для компьютера" class="desk">
+  <img src="image/banner-mobile.webp" alt="фон для телефона" class="mob">
 </div>
+```
 
-
-<script>
-	function ibg() {
+```js
+function ibg() {
   const ibgBlocks = document.querySelectorAll('.ibg');
   ibgBlocks.forEach(block => {
-    const imgDesktop = block.querySelector('img.desktop');
-    const imgMobile = block.querySelector('img.mobile');
-    const isMobile = window.innerWidth <= 768; // нужный порог можно менять
+    const imgDesktop = block.querySelector('img.desk');
+    const imgMobile = block.querySelector('img.mob');
+    const isMobile = window.innerWidth <= 768;
     const src = isMobile && imgMobile ? imgMobile.src : imgDesktop ? imgDesktop.src : null;
 
     if (src) {
@@ -39,10 +35,8 @@
     }
   });
 }
-
 ibg();
-window.addEventListener('resize', ibg); // обновляем фон при изменении ширины
-</script>
+window.addEventListener('resize', ibg);
 ```
 
 
