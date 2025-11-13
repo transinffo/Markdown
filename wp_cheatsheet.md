@@ -427,6 +427,59 @@ echo '</pre>';
 ```
 ---
 
+## ✅  Функция для подсчета просмотров статей
+
+### Добавляем в functions.php:
+```php
+// счетчик просмотра статей блога
+// Функция для увеличения просмотров
+function set_post_views($post_id) {
+    $count = get_post_meta($post_id, 'post_views_count', true);
+    $count = $count ? $count + 1 : 1; // Увеличиваем счетчик на 1
+    update_post_meta($post_id, 'post_views_count', $count);
+}
+
+// Хук для вызова функции при загрузке поста
+function track_post_views() {
+    if (is_single()) {
+        global $post;
+        set_post_views($post->ID);
+    }
+}
+add_action('wp_head', 'track_post_views');
+
+// Функция для вывода количества просмотров
+function get_post_views($post_id) {
+    $count = get_post_meta($post_id, 'post_views_count', true);
+    return $count ? $count : '0';
+}
+
+// Обнуляем просмотры для дублированной записи
+function reset_post_views_on_duplicate($post_id, $post) {
+    if ($post->post_type === 'post' && isset($_GET['action']) && $_GET['action'] === 'rd_duplicate_post_as_draft') {
+        update_post_meta($post_id, 'post_views_count', 0);
+    }
+}
+add_action('save_post', 'reset_post_views_on_duplicate', 10, 2);
+
+// Обнуляем просмотры при создании перевода через Polylang
+function reset_post_views_on_polylang_translation($post_id, $post) {
+    // Проверяем, что это создание перевода
+    if (function_exists('pll_get_post') && isset($_POST['pll_post_translations'])) {
+        $translations = $_POST['pll_post_translations'];
+        if (isset($translations['default']) && $translations['default'] != $post_id) {
+            // Это перевод, обнуляем просмотры
+            update_post_meta($post_id, 'post_views_count', 0);
+        }
+    }
+}
+add_action('save_post', 'reset_post_views_on_polylang_translation', 10, 2);
+
+
+//счетчик просмотра статей блога
+```
+---
+
 ## ✅  Функция для подсчета времени чтения статьи
 
 ### Добавляем в functions.php:
