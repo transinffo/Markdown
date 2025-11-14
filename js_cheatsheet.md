@@ -1,6 +1,48 @@
 # 🌈 JavaScript Cheat Sheet
 
+
 ## 📦 Класс ibg
+
+```css
+.ibg{
+background-position: center;
+background-size: cover;
+background-repeat: no-repeat;
+position: relative;
+}
+
+.ibg img{
+width: 0;
+height: 0;
+position: absolute;
+top: 0;
+left: 0;
+opacity: 0;
+visibility: hidden;
+}
+```
+
+```html
+<div class="ibg">
+  <img src="image/banner-desktop.webp" alt="фон для компьютера">
+</div>
+```
+
+```js
+function ibg(){
+
+let ibg=document.querySelectorAll(".ibg");
+for (var i = 0; i < ibg.length; i++) {
+if(ibg[i].querySelector('img')){
+ibg[i].style.backgroundImage = 'url('+ibg[i].querySelector('img').getAttribute('src')+')';
+}
+}
+}
+
+ibg();
+```
+
+## 📦 Класс ibg для 2 img
 
 ```css
 .ibg {
