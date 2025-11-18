@@ -275,6 +275,14 @@ add_action('admin_init', function () {
     the_post_thumbnail('full'); // Размеры: 'thumbnail', 'medium', 'large', 'full'
 } ?>
 
+// Миниатюра поста расширенные атрибуты
+<?php
+$id = get_post_thumbnail_id();
+echo $id ? '<img src="' . esc_url( wp_get_attachment_image_url( $id, 'full' ) ) . '" class="" alt="' . esc_attr( get_post_meta( $id, '_wp_attachment_image_alt', true ) ) . '">' : '';
+?>
+
+
+
 // Цикл WordPress (The Loop)
 <?php if ( have_posts() ) : while ( have_posts() ) : the_post(); ?>
     <h2><?php the_title(); ?></h2>
