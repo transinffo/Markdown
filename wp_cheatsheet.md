@@ -1,5 +1,99 @@
 # 🌟 WordPress Cheat Sheet
 
+## ✅  Вывод swiper слайдера (пример с разными размерами фото)
+
+### Скрипты тут:
+C:\Users\trans\work\CMS\swiper
+или тут:
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"
+/>
+<script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+
+### Подключение в теме:
+wp_enqueue_style( 'theme-swiper-css', get_template_directory_uri() . '/assets/css/swiper-bundle.min.css');
+wp_enqueue_script( 'theme-swiper-js', get_template_directory_uri() . '/assets/js/swiper-bundle.min.js', array(), '20201008', false );
+
+### html + css + js :
+```html
+<div class="single_article_last_posts swiper">
+	<!-- Additional required wrapper -->
+	<div class="swiper-wrapper">
+		<!-- 1 slide -->
+		<div class="swiper-slide">
+			<a href="/"> <img src="/" alt="">
+				<div class="slide_title">Title</div>
+			</a>
+		</div>
+		<!-- 1 slide -->
+	</div>
+	<!-- If we need pagination -->
+	<div class="swiper-pagination"></div>
+	<!-- If we need navigation buttons -->
+	<div class="swiper-button-prev"></div>
+	<div class="swiper-button-next"></div>
+</div>
+```
+
+```css
+.single_article_last_posts.swiper {
+  max-width: 787px;
+  padding: 0 50px;
+}
+
+.single_article .swiper-slide img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover; 
+    border-radius: 10px;
+}
+
+.slide_title {
+    text-align: center;
+    font-size: 16px;
+    color: #0098b0;
+    margin: 10px 0;
+}
+
+
+.swiper-pagination.swiper-pagination-bullets.swiper-pagination-horizontal{
+    position: relative;
+    margin-top: 10px;
+}
+
+.swiper-button-next, .swiper-button-prev{
+    color: #00b0b0;
+}
+```
+
+```js
+  const swiper = new Swiper('.single_article_last_posts.swiper', {
+  slidesPerView: 3,
+  spaceBetween: 50,
+  slidesPerGroup: 1,
+  loop: true,
+
+  pagination: {
+    el: '.swiper-pagination',
+  },
+
+  navigation: {
+    nextEl: '.swiper-button-next',
+    prevEl: '.swiper-button-prev',
+  },
+
+  breakpoints: {
+            0:    { slidesPerView: 1 },
+            768:  { slidesPerView: 2 },
+            1024: { slidesPerView: 3 }
+   }
+
+});
+```
+
+
+
+
+
 ## ✅  Добавляет CSS-класс в <body>, соответствующий активному шаблону категории.
 
 ### Кастомные шаблоны должны лежать в /template-parts, например:
