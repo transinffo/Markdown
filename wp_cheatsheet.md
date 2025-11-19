@@ -3,15 +3,21 @@
 ## ✅  Вывод swiper слайдера (пример с разными размерами фото)
 
 ### Скрипты тут:
+```html
 C:\Users\trans\work\CMS\swiper
+```
 или тут:
+```html
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css"
 />
 <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
+```
 
 ### Подключение в теме:
+```php
 wp_enqueue_style( 'theme-swiper-css', get_template_directory_uri() . '/assets/css/swiper-bundle.min.css');
 wp_enqueue_script( 'theme-swiper-js', get_template_directory_uri() . '/assets/js/swiper-bundle.min.js', array(), '20201008', false );
+```
 
 ### html + css + js :
 ```html
