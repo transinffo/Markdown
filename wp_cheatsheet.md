@@ -367,6 +367,17 @@ add_action('admin_init', function () {
 // Категории поста
 <?php the_category(', '); ?>
 
+// Заголовок категории (в шаблоне категории)
+<?php single_cat_title(); ?>
+
+// Вывод acf поля в шаблоне категории
+<?php
+$term = get_queried_object();
+$field = get_field( 'имя_поля', 'category_' . $term->term_id );
+if ( $field ){echo esc_html( $field );}
+?>
+
+
 // Теги поста
 <?php the_tags(); ?>
 
