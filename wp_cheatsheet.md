@@ -343,6 +343,9 @@ add_action('admin_init', function () {
 # ✅ Памятка по выводу основного контента в WordPress
 
 ```php
+// Вывод шорткода в шаблоне
+<?=do_shortcode('111');?>
+
 // Заголовок поста
 <?php the_title(); ?>
 
