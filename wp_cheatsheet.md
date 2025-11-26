@@ -378,6 +378,15 @@ add_action('admin_init', function () {
 $term = get_queried_object();
 $field = get_field( 'имя_поля', 'category_' . $term->term_id );
 if ( $field ){echo esc_html( $field );}
+
+// вывод репитера
+$rows = get_field( 'cat_add_question', 'category_' . $term->term_id );
+if ( $rows ) : ?>
+    <?php foreach ( $rows as $row ) : ?>
+          <?php echo esc_html( $row['question'] ); ?>
+          <?php echo wp_kses_post( $row['answer'] ); ?>
+	<?php endforeach; ?>
+<?php endif; ?>
 ?>
 
 
