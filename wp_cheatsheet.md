@@ -654,7 +654,7 @@ function get_reading_time($post_id = null, $field_name = null) {
 ```
 ---
 
-## ✅  Отзывы Google
+## ✅  Отзывы Google (посты и категории)
 
 ### Создаем группу полей "Отзывы Google" с полями:
 
@@ -665,27 +665,65 @@ function get_reading_time($post_id = null, $field_name = null) {
 ### Код для functions.php
 
 ```php
-//Отзывы Google
+// Отзывы Google
+
+// ============================================================================
+//   1. Подгружаем отзывы в select ACF (работает и в постах, и в категориях)
+// ============================================================================
 add_filter('acf/load_field/name=selected_reviews', function ($field) {
-    // Получаем значение поля 'google_reviews_json' из текущего поста
-    $post_id = get_the_ID();
-    $file = get_field('google_reviews_json', $post_id);
+
+    // ★ NEW: определяем корректный ACF ID для терма в админке (category_123)
+    $acf_id = false;
+
+    // 1) Если мы в админке и явно редактируем термин (обычный WP-редактор терма)
+    if (is_admin() && isset($_GET['tag_ID'])) {
+        $term_id  = intval($_GET['tag_ID']);
+        $taxonomy = isset($_GET['taxonomy']) ? sanitize_text_field($_GET['taxonomy']) : 'category';
+        if ($term_id) {
+            $acf_id = $taxonomy . '_' . $term_id; // формат ACF для термов: {taxonomy}_{term_id}
+        }
+    }
+
+    // 2) Ещё один вариант получения терма (на случай нестандартных страниц)
+    if (!$acf_id && is_admin()) {
+        $queried = get_queried_object();
+        if ($queried && isset($queried->taxonomy) && isset($queried->term_id)) {
+            $acf_id = $queried->taxonomy . '_' . intval($queried->term_id);
+        }
+    }
+
+    // 3) Фоллбэк — стандартный ACF helper (работает для постов и, в большинстве случаев, для термов)
+    if (!$acf_id) {
+        $acf_id = acf_get_valid_post_id(null);
+    }
+
+    // Safety: если всё ещё пусто — не ломаем админку, возвращаем поле без choices
+    if (!$acf_id) {
+        return $field;
+    }
+
+    // Получаем файл (работает и для post_123, и для category_45 и т.д.)
+    $file = get_field('google_reviews_json', $acf_id);
 
     if ($file && isset($file['url'])) {
-        $json = file_get_contents($file['url']);
-        $data = json_decode($json, true);
+        $json = @file_get_contents($file['url']); // @ чтобы избежать warning, если URL недоступен
+        $data = $json ? json_decode($json, true) : null;
 
         if (is_array($data) && isset($data['reviews'])) {
             $choices = [];
+
             foreach ($data['reviews'] as $review) {
-                $id    = $review['id'];
+                $id    = $review['id'] ?? '';
                 $stars = isset($review['stars']) ? str_repeat('★', (int)$review['stars']) : '';
-                $date  = isset($review['date']) ? $review['date'] : '';
-                $text  = mb_strimwidth($review['text'], 0, 180, '...');
+                $date  = $review['date'] ?? '';
+                $text  = isset($review['text']) ? mb_strimwidth($review['text'], 0, 180, '...') : '';
+
+                if ($id === '') continue;
 
                 $label = trim("{$stars} · {$date} · {$review['authorName']} — {$text}");
                 $choices[$id] = $label;
             }
+
             $field['choices'] = $choices;
         }
     }
@@ -693,67 +731,95 @@ add_filter('acf/load_field/name=selected_reviews', function ($field) {
     return $field;
 });
 
-// Шорткод: [selected_google_reviews]
-add_shortcode('selected_google_reviews', function () {
-    $post_id = get_the_ID();
-    $json_file = get_field('google_reviews_json', $post_id);
-    $selected_ids = get_field('selected_reviews', $post_id);
 
-    if (!$json_file || !$selected_ids || !isset($json_file['url'])) {
-        return '<p><em>Отзывы не выбраны или файл не найден.</em></p>';
+
+// ============================================================================
+//   2. Шорткод [selected_google_reviews] — теперь работает и в категориях
+// ============================================================================
+add_shortcode('selected_google_reviews', function () {
+
+    // Определяем текущий объект корректно
+    $obj = get_queried_object();
+
+    if (!$obj) {
+        return '';
     }
 
-    $json = file_get_contents($json_file['url']);
+    // Определяем $acf_id вручную, без fallback
+    if (!empty($obj->term_id)) {
+        // Таксономия
+        $acf_id = $obj->taxonomy . '_' . $obj->term_id;
+    } else {
+        // Пост
+        $acf_id = $obj->ID ?? 0;
+    }
+
+    // Получаем поля только для этого ACF ID
+    $json_file    = get_field('google_reviews_json', $acf_id);
+    $selected_ids = get_field('selected_reviews', $acf_id);
+
+    // Если админ не выбрал отзывы → ничего не выводим
+    if (empty($selected_ids) || !is_array($selected_ids)) {
+        return '';
+    }
+
+    // Нет JSON файла → не выводим
+    if (!$json_file || empty($json_file['url'])) {
+        return '';
+    }
+
+    // Загружаем JSON
+    $json = @file_get_contents($json_file['url']);
     $data = json_decode($json, true);
 
-    if (!is_array($data) || !isset($data['reviews'])) {
-        return '<p><em>Ошибка чтения отзывов.</em></p>';
+    if (!is_array($data) || empty($data['reviews'])) {
+        return '';
     }
 
     $reviews = $data['reviews'];
 
-    // Преобразуем в ассоциативный массив для быстрого доступа по ID
+    // Индексируем по ID
     $indexed = [];
     foreach ($reviews as $r) {
         $indexed[$r['id']] = $r;
     }
 
-    // URL Google страницы
-    $google_url = isset($data['pageUrl']) ? $data['pageUrl'] : '';
+    // Данные страницы
+    $google_url   = $data['pageUrl']     ?? '';
+    $ratingValue  = $data['ratingValue'] ?? 0;
+    $reviewCount  = $data['reviewCount'] ?? 0;
 
-    // Значения рейтинга и количества отзывов
-    $ratingValue = isset($data['ratingValue']) ? $data['ratingValue'] : 0;
-    $reviewCount = isset($data['reviewCount']) ? $data['reviewCount'] : 0;
-
-    // Определим язык и заголовки
+    // Язык интерфейса
     $lang = function_exists('pll_current_language') ? pll_current_language() : 'uk';
-    $title = ($lang === 'uk') ? 'Відгуки про нас на Google' : 'Отзывы о нас на Google';
+    $title     = ($lang === 'uk') ? 'Відгуки про нас на Google' : 'Отзывы о нас на Google';
     $link_text = ($lang === 'uk') ? 'Подивитись усі відгуки' : 'Посмотреть все отзывы';
 
-    $output = '<div class="selected-google-reviews">';
+    // HTML
+    $output  = '<div class="selected-google-reviews">';
     $output .= '<h3 class="google-reviews-title">' . esc_html($title) . '</h3>';
     $output .= '<div class="google-reviews">';
 
-    $schema_reviews = []; // Сюда соберем микроразметку
+    $schema_reviews = [];
 
     foreach ($selected_ids as $id) {
         if (!isset($indexed[$id])) continue;
+
         $r = $indexed[$id];
 
         $avatar = esc_url($r['avatar']);
         $author = esc_html($r['authorName']);
-        $stars  = (int) $r['stars'];
+        $stars  = (int)$r['stars'];
         $date   = esc_html($r['date']);
         $text   = esc_html($r['text']);
 
-        // HTML отзыв
-        $output .= '<div class="google-review" style="margin-bottom:20px;padding:5px;">';
-        $output .= '<p style="display:flex;align-items:center;width:100%;"><img src="' . $avatar . '" alt="' . $author . '" width="36" height="36" style="border-radius:50%; vertical-align:middle; margin-right:8px;"> <strong>' . $author . '</strong></p>';
-        $output .= '<p style="margin: 2px 0;width:100%;"><span style="color:#f39c12;">' . str_repeat('★', $stars) . '</span> · ' . $date . '</p>';
-        $output .= '<p style="margin-top: 5px;max-height:200px;overflow-y:auto;">' . $text . '</p>';
+        // HTML
+        $output .= '<div class="google-review">';
+        $output .= '<p class="review_ava_fio"><img src="'.$avatar.'" alt="'.$author.'"> <strong>'.$author.'</strong></p>';
+        $output .= '<p class="review_stars"><span>' . str_repeat("★", $stars) . '</span> · ' . $date . '</p>';
+        $output .= '<p class="review_text">'.$text.'</p>';
         $output .= '</div>';
 
-        // JSON-LD для отзыва
+        // JSON-LD
         $schema_reviews[] = [
             "@type" => "Review",
             "author" => [
@@ -767,18 +833,20 @@ add_shortcode('selected_google_reviews', function () {
                 "worstRating" => 1
             ],
             "reviewBody" => $text,
-            "datePublished" => $date 
+            "datePublished" => $date
         ];
     }
 
-    $output .= '</div>'; // .google-reviews
+    $output .= '</div>';
 
-    // Ссылка на Google
-    $output .= '<h3 style="margin:30px 0;text-align:center;"><a href="' . esc_url($google_url) . '" target="_blank">' . esc_html($link_text) . '</a></h3>';
-    $output .= '</div>'; // .selected-google-reviews
+    if ($google_url) {
+        $output .= '<div class="google_rev_link"><a href="' . esc_url($google_url) . '" target="_blank">' . esc_html($link_text) . '</a></div>';
+    }
 
-    // JSON-LD микроразметка
-    if (!empty($schema_reviews)) {
+    $output .= '</div>';
+
+    // JSON-LD
+    if ($schema_reviews) {
         $organization = [
             "@context" => "https://schema.org",
             "@type" => "Organization",
@@ -791,39 +859,255 @@ add_shortcode('selected_google_reviews', function () {
             "review" => $schema_reviews
         ];
 
-        $output .= '<script type="application/ld+json">' . wp_json_encode($organization, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . '</script>';
+        $output .= '<script type="application/ld+json">'
+                 . wp_json_encode($organization, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT)
+                 . '</script>';
     }
 
     return $output;
 });
 
-//Показываем шорткод в админке под полем selected_reviews (в записи)
+
+
+// ============================================================================
+//   3. Блок напоминания шорткода под ACF полем выбранных отзывов
+// ============================================================================
 add_action('acf/render_field/name=selected_reviews', function ($field) {
-    echo '<div style="margin-top:10px; background: #f9f9f9; padding:10px; border-left: 4px solid #0073aa;">';
-    echo '<strong>📋 Шорткод для вставки:</strong><br>';
-    echo '<code style="font-size: 16px;">[selected_google_reviews]</code>';
-    echo '<p style="margin: 5px 0 0; font-size: 13px;">Выберите файл с отзывами, сохраните страницу, выберите отзывы, вставьте этот шорткод в контент и опять сохраните страницу.</p>';
-    echo '</div>';
+
+    // Показываем только при редактировании постов (не категорий)
+    if ( ! is_admin() ) {
+        return;
+    }
+
+    $screen = get_current_screen();
+
+    // Условие: мы на странице редактирования поста, а не терминов
+    if (
+        ! $screen
+        || $screen->base !== 'post'
+        || ! empty($screen->taxonomy)  // если taxonomy не пуст — это терм
+    ) {
+        return;
+    }
+    ?>
+
+    <div style="margin-top:10px; background:#f9f9f9; padding:10px; border-left:4px solid #0073aa;">
+        <strong>📋 Шорткод для вставки:</strong><br>
+
+        <div style="
+            font-size:16px;
+            background:#fff;
+            border:1px solid #ddd;
+            padding:4px 6px;
+            display:inline-block;
+            margin-top:4px;
+            user-select:none;
+        " contenteditable="false">
+            <span style="user-select:all;">[selected_google_reviews]</span>
+        </div>
+
+        <p style="margin:5px 0 0; font-size:13px;">
+            Выберите файл с отзывами, сохраните страницу, выберите отзывы и вставьте этот шорткод в контент и опять сохраните страницу.
+        </p>
+    </div>
+
+    <?php
 });
 
-//разрешить application/json для ACF поля «Файл»
+
+// ============================================================================
+//   4. Разрешаем JSON для ACF поля "Файл"
+// ============================================================================
 add_filter('acf/fields/file/query', function ($args, $field, $post_id) {
-    // Разрешаем json-файлы для ACF поля
     $args['post_mime_type'] = ['application/json'];
     return $args;
 }, 10, 3);
 
-// увеличил высоту select поля selected_reviews в админке
+
+// ============================================================================
+//   5. Увеличиваем высоту select поля selected_reviews
+// ============================================================================
 function my_acf_admin_styles() {
     echo '<style>
-        div[data-name="selected_reviews"] select
-        {
+        div[data-name="selected_reviews"] select,
+        tr[data-name="selected_reviews"] select
+         {
             height: 300px !important;
+            max-width: 100% !important;
         }
     </style>';
 }
 add_action('admin_head', 'my_acf_admin_styles');
+
+// Отзывы Google
 ```
 
 ---
+
+```php
+<!-- блок отзывы -->
+<?=do_shortcode('[selected_google_reviews]');?>
+<!-- блок отзывы -->
+```
+
+---
+
+```css
+/* блок гугл отзывов */
+
+.selected-google-reviews{
+    margin-top: 20px;
+}
+.google-reviews ul{
+  display: inline;
+}
+
+.google-reviews-title
+ {
+    font-size: 24px;
+    padding: 20px 0;
+    color: #1b87ac;
+    font-weight: 600;
+    text-align: center;
+}
+
+
+.article-page .google-reviews-title{
+    font-size: 20px;
+    text-align: left;
+    font-weight: 900;
+    color: #333;
+}
+
+.selected-google-reviews h3 a{
+    font-size: 20px;
+    padding: 20px 0;
+    color: #1b87ac;
+    font-weight: 600;
+    text-align: center;
+}
+
+.selected-google-reviews div a:hover{
+  scale:1.05;
+}
+
+
+.google-reviews{
+  padding: 0 40px;
+}
+
+.google-review{
+    margin-bottom:20px;
+    padding:5px;
+}
+
+.google-review p strong{
+    font-size: 15px;
+}
+
+.google-review p img{
+    margin: 0;
+}
+
+
+.google-reviews button.slick-next.slick-arrow {
+    width: 40px;
+    height: auto;
+}
+
+.google-reviews button.slick-prev.slick-arrow {
+    width: 40px;
+    height: auto;
+}
+
+.google-reviews .slick-next {
+    right: 0;
+}
+
+.google-reviews .slick-prev {
+    left: 0;
+}
+
+.google_rev_link{
+    margin:0 0 40px 0;
+    text-align:center;
+}
+
+
+.google_rev_link a{
+    overflow: hidden;
+    position: relative;
+    padding: 10px 20px;
+    background: -o-linear-gradient(357.17deg, #0ebc98 3.97%, #1c84ad 100%);
+    background: linear-gradient(92.83deg, #0ebc98 3.97%, #1c84ad 100%);
+    color: #fff;
+    border-radius: 6px;
+}
+
+.google_rev_link a:hover{
+    text-decoration: none;
+    background: linear-gradient(92.83deg, #1c84ad 3.97%, #0ebc98 97.82%);
+}
+
+.google-reviews .review_ava_fio{
+    display:flex;
+    align-items:center;
+}
+
+.google-reviews .review_ava_fio img{
+    width: 36px;
+    height: 36px;
+    border-radius:50%;
+    margin-right:8px;
+}
+
+.google-reviews .review_stars span{
+    color: #f39c12;
+}
+
+
+.google-reviews .review_text{
+    font-size: 16px;
+    margin-top:5px;
+    max-height:200px;
+    overflow-y:auto;
+}
+
+/* блок гугл отзывов */
+```
+
+---
+
+```js
+//инициируем слайдер гугл отзывов
+$(document).ready(function() {
+    $('.google-reviews').slick({
+        slidesToShow: 3,
+        slidesToScroll: 1,
+        infinite: true,
+        arrows: true,
+        prevArrow: '<button type="button" class="slick-prev"><img src="/wp-content/themes/life/assets/images/prev.svg" alt="Previous"></button>',
+        nextArrow: '<button type="button" class="slick-next"><img src="/wp-content/themes/life/assets/images/next.svg" alt="Next"></button>',
+        dots: false,
+        responsive: [{
+            breakpoint: 1024,
+            settings: {
+                slidesToShow: 2
+            }
+        }, {
+            breakpoint: 600,
+            settings: {
+                slidesToShow: 2
+            }
+        }, {
+            breakpoint: 480,
+            settings: {
+                slidesToShow: 1,
+                adaptiveHeight: true
+            }
+        }]
+    });
+});
+//инициируем слайдер гугл отзывов
+```
 
