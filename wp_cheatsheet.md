@@ -398,6 +398,9 @@ if ( $rows ) : ?>
     the_post_thumbnail('full'); // Размеры: 'thumbnail', 'medium', 'large', 'full'
 } ?>
 
+//acf изображение формат массив
+<?php if ( $img = get_field('photo_doctor_post')) echo wp_get_attachment_image($img['ID'], 'full'); ?>
+
 // Миниатюра поста расширенные атрибуты
 <?php
 $id = get_post_thumbnail_id();
