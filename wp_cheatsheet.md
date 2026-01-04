@@ -401,7 +401,9 @@ if ( $rows ) : ?>
 //acf изображение формат массив
 <?php if ( $img = get_field('photo_doctor_post')) echo wp_get_attachment_image($img['ID'], 'full'); ?>
 //или
-<?php if($i=get_field('image_field')) echo '<img src="'.esc_url($i['url']).'" alt="'.esc_attr($i['alt']).'" class="my-class">'; ?>
+<?php if($i=get_field('image_field')) echo '<img src="'.esc_url($i['url']).'" alt="'.esc_attr($i['alt']).'" class="111">'; ?>
+//или
+<?php if($i=get_field('image_field')) echo '<img src="'.esc_url($i['url']).'" alt="'.esc_attr($i['alt']).'">'; ?>
 
 
 // Миниатюра поста расширенные атрибуты
