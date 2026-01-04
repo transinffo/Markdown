@@ -389,6 +389,20 @@ if ( $rows ) : ?>
 <?php endif; ?>
 ?>
 
+//прямое обращение к массиву репитера
+
+block_4_add_1
+├──title
+├──text
+├──icon
+
+//первая итерация
+<?= get_field_object('block_4_add_1')['value'][0]['title']; ?>
+<?= get_field_object('block_4_add_1')['value'][0]['title']; ?>
+<?php $icon = get_field_object('block_4_add_1')['value'][0]['icon']; ?>
+<img src="<?= esc_url($icon['url']); ?>" alt="<?= esc_attr($icon['alt']); ?>">
+
+
 
 // Теги поста
 <?php the_tags(); ?>
@@ -398,12 +412,11 @@ if ( $rows ) : ?>
     the_post_thumbnail('full'); // Размеры: 'thumbnail', 'medium', 'large', 'full'
 } ?>
 
-//acf изображение формат массив
+//acf изображение формат массив без класса
 <?php if ( $img = get_field('photo_doctor_post')) echo wp_get_attachment_image($img['ID'], 'full'); ?>
-//или
+//или с классом
 <?php if($i=get_field('image_field')) echo '<img src="'.esc_url($i['url']).'" alt="'.esc_attr($i['alt']).'" class="111">'; ?>
-//или
-<?php if($i=get_field('image_field')) echo '<img src="'.esc_url($i['url']).'" alt="'.esc_attr($i['alt']).'">'; ?>
+
 
 
 // Миниатюра поста расширенные атрибуты
