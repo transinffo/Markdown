@@ -453,9 +453,14 @@ wp_reset_postdata();
 // Получение текущего URL поста
 <?php echo get_permalink(); ?>
 
+//ссылка на главную для polylang
+<a href="<?= esc_url( function_exists('pll_home_url') ? pll_home_url() : home_url('/') ); ?>">Главная</a>
+
+
 
 ## ✅  Получить данные со страницы Общие настройки
 ```php
+
 get_option( 'blogname' ); //название сайта
 
 get_option( 'blogdescription' ); //подзаголовок (описание сайта)
