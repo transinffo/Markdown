@@ -4,40 +4,75 @@
 ## 📦 Класс ibg
 
 ```css
-.ibg{
-background-position: center;
-background-size: cover;
-background-repeat: no-repeat;
-position: relative;
+.ibg {
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  position: relative;
 }
 
-.ibg img{
-width: 0;
-height: 0;
-position: absolute;
-top: 0;
-left: 0;
-opacity: 0;
-visibility: hidden;
+.ibg img {
+  width: 0;
+  height: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  visibility: hidden;
 }
 ```
 
 ```html
-<div class="ibg">
-  <img src="image/banner-desktop.webp" alt="фон для компьютера">
-</div>
+<section class="hero ibg">
+    <!-- фон блока -->
+      <picture>
+      <!-- mobile -->
+      <source
+        srcset="./assets/img/hero_bg_mob.webp"
+        media="(max-width: 519px)">
+
+      <!-- desktop -->
+      <img
+        src="./assets/img/hero_bg.webp"
+        alt="Фон hero-секции">
+    </picture>
+  <!-- фон блока -->
+</section>
 ```
 
 ```js
 function ibg() {
-	let ibg = document.querySelectorAll(".ibg");
-	for(var i = 0; i < ibg.length; i++) {
-		if(ibg[i].querySelector('img')) {
-			ibg[i].style.backgroundImage = 'url(' + ibg[i].querySelector('img').getAttribute('src') + ')';
+	const ibgElements = document.querySelectorAll('.ibg');
+
+	ibgElements.forEach(el => {
+		const picture = el.querySelector('picture');
+		if (!picture) return;
+
+		let imgSrc = '';
+
+		// если есть активный source
+		const sources = picture.querySelectorAll('source');
+		sources.forEach(source => {
+			if (source.media && window.matchMedia(source.media).matches) {
+				imgSrc = source.srcset;
+			}
+		});
+
+		// fallback на img
+		if (!imgSrc) {
+			const img = picture.querySelector('img');
+			if (img) imgSrc = img.getAttribute('src');
 		}
-	}
+
+		if (imgSrc) {
+			el.style.backgroundImage = `url(${imgSrc})`;
+		}
+	});
 }
+
 ibg();
+window.addEventListener('resize', ibg);
+
 ```
 
 ## 📦 Класс ibg для 2 img
