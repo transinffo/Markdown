@@ -11,65 +11,16 @@
 По возможности все размеры указывай в px.
 Детально остальной css я дабавлю руками. 
 От тебя мне нужен своего рода эскиз страницы, но абсолютно все тексты из макета ты должен вставить в код.
+
 4. Для background-image используй класс ibg:
-
 css:
-.ibg {
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  position: relative;
-}
-
-.ibg img {
-  width: 0;
-  height: 0;
-  position: absolute;
-  top: 0;
-  left: 0;
-  opacity: 0;
-  visibility: hidden;
-}
+.ibg {background-position: center;background-size: cover;background-repeat: no-repeat;position: relative;}.ibg img {width: 0;height: 0;position: absolute;top: 0;left: 0;opacity: 0;visibility: hidden;}
 
 html:
- <section class="hero ibg">
- 	<img src="./assets/img/hero_bg.webp" alt="Фон hero-секции">
- </section>
+ <section class="hero ibg"><img src="./assets/img/hero_bg.webp" alt="Фон"></section>
 
 js:
-function ibg() {
-	const ibgElements = document.querySelectorAll('.ibg');
-
-	ibgElements.forEach(el => {
-		const picture = el.querySelector('picture');
-		if (!picture) return;
-
-		let imgSrc = '';
-
-		// если есть активный source
-		const sources = picture.querySelectorAll('source');
-		sources.forEach(source => {
-			if (source.media && window.matchMedia(source.media).matches) {
-				imgSrc = source.srcset;
-			}
-		});
-
-		// fallback на img
-		if (!imgSrc) {
-			const img = picture.querySelector('img');
-			if (img) imgSrc = img.getAttribute('src');
-		}
-
-		if (imgSrc) {
-			el.style.backgroundImage = `url(${imgSrc})`;
-		}
-	});
-}
-
-ibg();
-window.addEventListener('resize', ibg);
-
- 
+function ibg(){const t=document.querySelectorAll(".ibg");t.forEach(e=>{const r=e.querySelector("picture");if(!r)return;let c="";r.querySelectorAll("source").forEach(t=>{t.media&&window.matchMedia(t.media).matches&&(c=t.srcset)}),c||(c=r.querySelector("img")?.getAttribute("src")),c&&(e.style.backgroundImage=`url(${c}`)})}ibg(),window.addEventListener("resize",ibg);
 
 5. Используй Block-Element-Modifier.
 6. Изображения тут: "./assets/img/".
