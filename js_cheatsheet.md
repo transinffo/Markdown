@@ -24,20 +24,15 @@
 
 ```html
 <section class="hero ibg">
-    <!-- фон блока -->
-      <picture>
-      <!-- mobile -->
-      <source
-        srcset="./assets/img/hero_bg_mob.webp"
-        media="(max-width: 519px)">
-
-      <!-- desktop -->
-      <img
-        src="./assets/img/hero_bg.webp"
-        alt="Фон hero-секции">
+    <picture>
+      <source srcset="./assets/img/hero_bg_mob.webp" media="(max-width: 519px)">
+      <img src="./assets/img/hero_bg.webp" alt="Фон hero-секции">
     </picture>
-  <!-- фон блока -->
 </section>
+ <!-- или -->
+ <section class="hero ibg">
+ 	<img src="./assets/img/hero_bg.webp" alt="Фон hero-секции">
+ </section>
 ```
 
 ```js
