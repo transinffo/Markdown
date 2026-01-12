@@ -29,18 +29,32 @@
 }
 ```
 
-## 🏷️ Плавное расстворение изображения снизу
+## 🏷️ Универсальный mask для fade-эффекта
+
+```html
+<!-- Растворение снизу -->
+<div class="fade" style="--fade-direction: top;"></div>
+```
+
 ```css
-.fade_bottom{
-  mask-image: linear-gradient(
-        to top,
-        transparent 0%,
-        rgba(0,0,0,0.3) 20%,
-        rgba(0,0,0,0.7) 40%,
-        black 60%
-    );
-    mask-size: 100% 100%;
-    mask-repeat: no-repeat;
+.fade {
+	/* базовые значения */
+	--fade-direction: top;       /* top | right | bottom | left */
+	--fade-soft-1: 0%;           /* старт */
+	--fade-soft-2: 20%;          /* слабый fade */
+	--fade-soft-3: 40%;          /* средний fade */
+	--fade-solid: 60%;           /* полностью видимо */
+
+	mask-image: linear-gradient(
+		to var(--fade-direction),
+		transparent var(--fade-soft-1),
+		rgba(0,0,0,0.3) var(--fade-soft-2),
+		rgba(0,0,0,0.7) var(--fade-soft-3),
+		black var(--fade-solid)
+	);
+
+	mask-size: 100% 100%;
+	mask-repeat: no-repeat;
 }
 ```
     
