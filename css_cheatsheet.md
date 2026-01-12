@@ -1,5 +1,34 @@
 # 🎨 CSS Cheat Sheet
 
+## 🏷️ Затенение с любой стороны (в примере белым слева и до середины)
+```css
+/* Базовый класс */
+.overlay {
+  position: relative;
+}
+
+/* Оверлей */
+.overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  /* НАСТРОЙКИ ПО УМОЛЧАНИЮ */
+  --overlay-color: 255, 255, 255; /* RGB */
+  --overlay-from: right;          /* left | right | top | bottom */
+  --overlay-strong: 0.55;        /* сила в начале */
+  --overlay-weak: 0;             /* сила в конце */
+  --overlay-stop: 55%;           /* где заканчивается */
+
+  background: linear-gradient(
+    to var(--overlay-from),
+    rgba(var(--overlay-color), var(--overlay-strong)) 0%,
+    rgba(var(--overlay-color), var(--overlay-weak)) var(--overlay-stop)
+  );
+}
+```
+
 ## 🏷️ Плавное расстворение изображения снизу
 ```css
 .fade_bottom{
