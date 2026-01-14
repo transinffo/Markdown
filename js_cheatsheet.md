@@ -1,6 +1,6 @@
 # 🌈 JavaScript Cheat Sheet
 
-## 📦 Маска для телефона (<input clas="phone">)
+## 📦 Маска для телефона (input clas="phone")
 ```js
 document.addEventListener('focusin', function (e) {
   if (!e.target.classList.contains('phone')) return;
