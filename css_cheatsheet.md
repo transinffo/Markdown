@@ -1,5 +1,24 @@
 # 🎨 CSS Cheat Sheet
 
+## 🏷️ Нумерация с помощью CSS
+```css
+  .container {
+    counter-reset: section;
+  }
+  .item::before {
+    counter-increment: section;
+    content: counter(section) ". ";
+    /*content: counter(section, decimal-leading-zero) ". "; будет 01 02 03*/
+    font-weight: bold;
+```
+```html
+<div class="container">
+  <div class="item">01к</div>
+  <div class="item">02</div>
+  <div class="item">03</div>
+</div>
+```
+
 ## 🏷️ Background-size
 ```css
 /* Короткая запись */
@@ -13,7 +32,6 @@
 	background-repeat: no-repeat;
 	background-size: cover;
 }
-
 ```
 
 ## 🏷️ Затенение с любой стороны (в примере белым слева и до середины)
