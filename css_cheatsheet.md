@@ -1,5 +1,21 @@
 # 🎨 CSS Cheat Sheet
 
+## 🏷️ Background-size
+```css
+/* Короткая запись */
+.block{
+    background: url('img/background/bg.webp') 0 0/cover no-repeat;
+}
+/* Полная запись */
+.block{
+	background-image: url('img/background/bg.webp');
+	background-position: 0 0;
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+
+```
+
 ## 🏷️ Затенение с любой стороны (в примере белым слева и до середины)
 ```css
 /* Базовый класс */
