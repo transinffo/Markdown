@@ -10,10 +10,11 @@
     content: counter(section) ". ";
     /*content: counter(section, decimal-leading-zero) ". "; будет 01 02 03*/
     font-weight: bold;
+}
 ```
 ```html
 <div class="container">
-  <div class="item">01к</div>
+  <div class="item">01</div>
   <div class="item">02</div>
   <div class="item">03</div>
 </div>
