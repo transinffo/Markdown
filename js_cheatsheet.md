@@ -1,5 +1,51 @@
 # 🌈 JavaScript Cheat Sheet
 
+## 📦 Программно кликаем по свойствам категории в WP и обновляем
+
+```js
+(async () => {
+    // 1. Собираем все кнопки "Свойства"
+    const buttons = Array.from(document.querySelectorAll('#the-list button.button-link.editinline'));
+    console.log(`Найдено элементов: ${buttons.length}. Начинаю автоматизацию...`);
+
+    for (let i = 0; i < buttons.length; i++) {
+        const btn = buttons[i];
+        console.log(`--- Обработка строки ${i + 1} из ${buttons.length} ---`);
+
+        // Скроллим к элементу, чтобы видеть процесс
+        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Нажимаем "Свойства"
+        btn.click();
+
+        // Ждем 1.5 секунды, чтобы форма точно успела открыться в DOM
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Ищем строку редактирования (она появляется под текущей или вместо неё)
+        const editRow = document.querySelector('#the-list tr.inline-edit-row');
+        
+        if (editRow) {
+            const saveButton = editRow.querySelector('button.save.button.button-primary');
+
+            if (saveButton) {
+                console.log('Нажимаю "Сохранить"...');
+                saveButton.click();
+            } else {
+                console.warn('Кнопка "Сохранить" не найдена в этой строке.');
+            }
+        } else {
+            console.warn('Форма редактирования не открылась.');
+        }
+
+        // Ждем 3 секунды перед переходом к следующей итерации
+        console.log('Ожидание 3 секунды перед следующим элементом...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+
+    console.log('✅ Все задачи выполнены!');
+})();
+```
+
 ## 📦 Маска для телефона (input clas="phone")
 ```js
 document.addEventListener('focusin', function (e) {
