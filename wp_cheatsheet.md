@@ -1,5 +1,15 @@
 # 🌟 WordPress Cheat Sheet
 
+
+## ✅  Выполнить в консоли браузера js для получения sql запроса со списком id постов на странице
+```js
+'SELECT * FROM `wp_posts` WHERE `ID` IN (' +
+[...document.querySelectorAll('tr[id^="post-"]')]
+  .map(el => el.id.replace('post-', ''))
+  .join(', ') +
+');'
+```
+
 ## ✅  Программно кликаем по кнопке Обновить на странице списка товаров woocommerce
 ```js
 (async () => {
