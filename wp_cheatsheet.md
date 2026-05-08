@@ -1,5 +1,106 @@
 # 🌟 WordPress Cheat Sheet
 
+## ✅  Программно кликаем по кнопке Обновить на странице списка товаров woocommerce
+```js
+(async () => {
+    // Находим все кнопки "Свойства" (Quick Edit) на странице товаров
+    const editButtons = document.querySelectorAll('#the-list .editinline');
+    
+    console.log(`Найдено товаров: ${editButtons.length}. Начинаю процесс обновления...`);
+
+    for (let i = 0; i < editButtons.length; i++) {
+        const btn = editButtons[i];
+        
+        // Находим родительскую строку <tr>, у товаров ID вида "post-18859"
+        const row = btn.closest('tr');
+        if (!row) continue;
+        
+        const postId = row.id.replace('post-', ''); 
+        
+        console.log(`[${i + 1}/${editButtons.length}] Обработка товара ID: ${postId}`);
+
+        // 1. Открываем "Свойства"
+        btn.click();
+
+        // 2. Ждем отрисовки формы (для товаров форма может быть тяжелее, ставим небольшую задержку)
+        // Если интернет быстрый, можно уменьшить до 1000-1500
+        await new Promise(r => setTimeout(r, 2000));
+
+        // 3. Ищем строку редактирования по ID "edit-18859"
+        const editRow = document.getElementById(`edit-${postId}`);
+        if (editRow) {
+            // В форме товара кнопка сохранения обычно имеет классы .save и .button-primary
+            const saveBtn = editRow.querySelector('button.save');
+            
+            if (saveBtn) {
+                saveBtn.click();
+                console.log(`✅ Товар ${postId} отправлен на обновление`);
+            } else {
+                console.error(`❌ Кнопка сохранения не найдена в форме #edit-${postId}`);
+            }
+        } else {
+            console.error(`❌ Форма Quick Edit для товара #edit-${postId} не появилась`);
+        }
+
+        // 4. Ждем завершения AJAX-запроса перед переходом к следующему товару
+        // Это важно, чтобы WooCommerce успел обновить мета-данные в БД
+        await new Promise(r => setTimeout(r, 2000));
+    }
+
+    console.log('--- Все товары на этой странице обработаны! ---');
+})();
+```
+
+
+## ✅  Программно кликаем по кнопке Обновить на странице списка кастомного бренда или категорий товаров woocommerce
+```js
+(async () => {
+    // Находим все кнопки "Свойства"
+    const editButtons = document.querySelectorAll('#the-list .editinline');
+    
+    console.log(`Найдено элементов: ${editButtons.length}. Начинаю процесс...`);
+
+    for (let i = 0; i < editButtons.length; i++) {
+        const btn = editButtons[i];
+        
+        // Находим родительскую строку <tr>, чтобы вытащить ID (например, "tag-248")
+        const row = btn.closest('tr');
+        if (!row) continue;
+        
+        const tagId = row.id.replace('tag-', ''); // Получаем чистый ID (например, 248)
+        
+        console.log(`[${i + 1}/${editButtons.length}] Обработка ID: ${tagId}`);
+
+        // 1. Кликаем "Свойства"
+        btn.click();
+
+        // 2. Ждем, пока WP вставит форму в DOM (ID формы будет "edit-248")
+        await new Promise(r => setTimeout(r, 5000));
+
+        // 3. Ищем кнопку сохранения внутри появившейся строки редактирования
+        const editRow = document.getElementById(`edit-${tagId}`);
+        if (editRow) {
+            const saveBtn = editRow.querySelector('button.save');
+            if (saveBtn) {
+                saveBtn.click();
+                console.log(`✅ Нажато "Обновить" для ID ${tagId}`);
+            } else {
+                console.error(`❌ Кнопка .save не найдена внутри #edit-${tagId}`);
+            }
+        } else {
+            console.error(`❌ Форма редактирования #edit-${tagId} не появилась`);
+        }
+
+        // 4. Ждем завершения AJAX-запроса (строка должна обновиться)
+        // Ставим 1.5 - 2 секунды, чтобы сервер не "лег" от пачки запросов
+        await new Promise(r => setTimeout(r, 1500));
+    }
+
+    console.log('--- Все категории обработаны! ---');
+})();
+```
+
+
 ## ✅  Вывод swiper слайдера (пример с разными размерами фото)
 
 ### Скрипты тут:
