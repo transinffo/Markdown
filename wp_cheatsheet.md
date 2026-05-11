@@ -1,5 +1,14 @@
 # 🌟 WordPress Cheat Sheet
 
+## ✅  Выполнить в консоли браузера js для получения sql запроса со списком id категориий или брендов на странице
+```js
+'SELECT * FROM `wp_terms` WHERE `term_id` IN (' +
+[...document.querySelectorAll('tr[id^="tag-"]')]
+  .map(el => el.id.replace('tag-', ''))
+  .join(', ') +
+');'
+```
+
 
 ## ✅  Выполнить в консоли браузера js для получения sql запроса со списком id постов на странице
 ```js
