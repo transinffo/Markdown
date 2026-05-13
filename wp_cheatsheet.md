@@ -12,7 +12,7 @@
 
 ## ✅  Выполнить в консоли браузера js для получения sql запроса со списком id постов на странице
 ```js
-'SELECT * FROM `wp_posts` WHERE `ID` IN (' +
+'SELECT p.ID,p.post_content,p.post_title FROM `wp_posts` p WHERE `ID` IN (' +
 [...document.querySelectorAll('tr[id^="post-"]')]
   .map(el => el.id.replace('post-', ''))
   .join(', ') +
