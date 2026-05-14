@@ -7,15 +7,21 @@
 ```text
 // =============================================================================
 // CUSTOM_TRANSLATE — универсальный переводчик контента для Google Sheets
-// Версия 1.1
+// Версия 1.2
 //
 // Использование в ячейке:
-//   =CUSTOM_TRANSLATE(A1; "uk"; "en")
+//   =CUSTOM_TRANSLATE(A1; "uk"; "en")          — базовый вариант
+//   =CUSTOM_TRANSLATE(A1; "ru"; "uk"; "і")     — с буквой-маркером
 //
 // Аргументы:
-//   content  — ячейка с контентом (текст, HTML, WP шорткоды и их смеси)
-//   fromLang — ISO-код языка источника ("uk", "ru", "en" и т.д.)
-//   toLang   — ISO-код языка назначения
+//   1. content  — ячейка с контентом (текст, HTML, WP шорткоды и их смеси)
+//   2. fromLang — ISO-код языка источника ("uk", "ru", "en" и т.д.)
+//   3. toLang   — ISO-код языка назначения
+//   4. letter   — [необязательно] буква-маркер для пропуска перевода.
+//                 Если текст содержит эту букву хотя бы один раз —
+//                 функция считает его уже переведённым и возвращает исходник.
+//                 Пример: буква "і" есть только в украинском алфавите,
+//                 поэтому её наличие означает что текст уже на украинском.
 //
 // Поддерживаемые форматы контента:
 //   - Простой текст
@@ -35,19 +41,31 @@
 /**
  * Главная точка входа — кастомная функция для ячейки Google Sheets.
  *
- * @param {string} content  Содержимое ячейки для перевода
- * @param {string} fromLang Язык источника (ISO 639-1, например "uk")
- * @param {string} toLang   Язык назначения (ISO 639-1, например "en")
+ * @param {string} content         Содержимое ячейки для перевода
+ * @param {string} fromLang        Язык источника (ISO 639-1, например "uk")
+ * @param {string} toLang          Язык назначения (ISO 639-1, например "en")
+ * @param {string} [letter]        Необязательно. Если указана буква (или строка),
+ *                                 и исходная ячейка содержит её хотя бы один раз —
+ *                                 перевод пропускается и возвращается исходный текст.
+ *                                 Полезно для детектирования уже переведённого контента.
+ *                                 Пример: =CUSTOM_TRANSLATE(A1;"ru";"uk";"і")
+ *                                 → если в A1 есть "і", значит текст уже украинский — не трогаем.
  * @return {string} Переведённый контент с сохранёнными тегами
  * @customfunction
  */
-function CUSTOM_TRANSLATE(content, fromLang, toLang) {
+function CUSTOM_TRANSLATE(content, fromLang, toLang, letter) {
   // --- Базовые проверки аргументов ---
   if (!content || String(content).trim() === "") return "";
   if (!fromLang || !toLang) return "❌ Укажи языки (аргументы 2 и 3)";
   if (fromLang === toLang) return String(content); // нет смысла переводить
 
   const text = String(content);
+
+  // --- Проверка буквы-маркера (4-й необязательный аргумент) ---
+  // Если буква задана и встречается в тексте — контент уже на целевом языке, пропускаем перевод.
+  if (letter !== undefined && letter !== null && String(letter).length > 0) {
+    if (text.includes(String(letter))) return text;
+  }
 
   // --- Проверка доступности сервиса перевода ---
   if (!isTranslationWorking_(toLang)) {
@@ -311,65 +329,4 @@ function assembleResult_(segments) {
 }
 
 
-// =============================================================================
-// ТЕСТЫ (запускать вручную из редактора Apps Script: Run → runTests)
-// =============================================================================
-
-/**
- * Ручные тесты для отладки в редакторе Apps Script.
- * Запусти функцию runTests() и смотри логи (View → Logs).
- */
-function runTests() {
-  const TESTS = [
-    {
-      name: "Простой текст",
-      input: "Привіт, як справи?",
-      from: "uk", to: "en"
-    },
-    {
-      name: "HTML с классами",
-      input: '<p class="intro">Це текст <strong>жирний</strong></p>',
-      from: "uk", to: "en"
-    },
-    {
-      name: "WP шорткоды + HTML",
-      input: '[vc_row][vc_column][vc_column_text]\n<ul id="list">\n<li>Текст 1</li>\n<li>Текст 2</li>\n</ul>\n[/vc_column_text][/vc_column][/vc_row]',
-      from: "uk", to: "en"
-    },
-    {
-      name: "Tailwind-скобки в классе",
-      input: '<span class="relative -mx-px my-[-0.2rem] rounded px-px py-[0.2rem]">Перекласти мене</span>',
-      from: "uk", to: "en"
-    },
-    {
-      name: "Одиночный тег img",
-      input: 'Фото товару: <img class="wp-image-22769" src="https://example.com/img.webp" alt="DJI NEO" width="500" height="264" /> Кінець.',
-      from: "uk", to: "en"
-    },
-    {
-      name: "Одиночный WP шорткод с атрибутами в кавычках",
-      input: 'Заповніть форму:\n[contact-form-7 id="102c92f" title="button-ques"]\nДякуємо!',
-      from: "uk", to: "en"
-    },
-    {
-      name: "HTML-комментарий",
-      input: "<!-- Це коментар --> Текст після коментаря.",
-      from: "uk", to: "en"
-    },
-    {
-      name: "Битый HTML (не закрытый тег)",
-      input: "<div><p>Незакритий абзац</div>",
-      from: "uk", to: "en"
-    }
-  ];
-
-  TESTS.forEach(function(t) {
-    try {
-      const result = CUSTOM_TRANSLATE(t.input, t.from, t.to);
-      Logger.log("✅ [" + t.name + "]\n  IN:  " + t.input + "\n  OUT: " + result + "\n");
-    } catch(e) {
-      Logger.log("❌ [" + t.name + "] ОШИБКА: " + e.message);
-    }
-  });
-}
 ```
