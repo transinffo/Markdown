@@ -793,3 +793,224 @@ function testTranslate() {
 [/vc_row]
 ```
 
+
+## 📦 Prompt for claude.ai для CUSTOM_TRANSLATE(...)
+
+```text
+1. Напиши код функции уровня "Production-grade" для apps scripts для гугл таблицы, который будет переводить содержимое ячейки со сложным контентом.
+
+2. Функция будет вида:
+=CUSTOM_TRANSLATE(A1; "ru"; "uk"; "і")
+
+Использование в ячейке:
+  =CUSTOM_TRANSLATE(A1; "uk"; "en")          — базовый вариант
+  =CUSTOM_TRANSLATE(A1; "ru"; "uk"; "і")     — с буквой-маркером
+
+Аргументы:
+  1. content  — ячейка с контентом (текст, HTML, WP шорткоды и их смеси)
+  2. fromLang — ISO-код языка источника ("uk", "ru", "en" и т.д.)
+  3. toLang   — ISO-код языка назначения
+  4. letter   — [необязательно] буква-маркер для пропуска перевода.
+                Если исходный текст содержит эту букву хотя бы один раз —
+                функция считает его уже переведённым и возвращает исходник.
+                Пример: буква "і" есть только в украинском алфавите,
+                поэтому её наличие означает что текст уже на украинском.
+
+3. Важно сохранить оригинальные:
+   - переводы строк
+   - пробелы между словами
+   - пробелы, отступы
+
+4. Описание работы:
+   - разбиваем контент на массив
+   - текст внутри тегов (а иногда и в атрибутах тегов, примеры я приведу) переводим через google api
+   - обратно собираем контент с переведенным текстом
+
+5. Варианты контента.
+
+5.1 Обычный текст с html, спецсимволами (типа "&nbsp;" или "&#x2705;") и графическими элементами типа "•":
+
+"<strong>Dji Mini 4 intelligent flight battery </strong>- запасний <strong>акумулятор </strong>для дрона Dji Mini 4.
+
+Батарейка забезпечує максимальний час польоту до 34 хвилин* (Виміри проводились при постійній швидкості 21,6 км/год у безвітряну погоду)
+
+<h3>Захват для DJI Ronin комплект:</h3>
+• С-образные ручки - 2 шт.
+• монтажные винты - 2 шт.
+• кейс сумка - 1 шт.
+
+&nbsp;
+
+<h3>&#x2705; <strong>Кому що підійде</strong></h3>
+
+<hr />
+
+<!-- обычный шорт код для cf7 -->
+[contact-form-7 id="102c92f" title="button-ques"]
+
+<div id="bxr-detail-block-wrap" class="row tb20 py-[0.2rem]">
+	<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+		<div class="bxr-detail-tab bxr-detail-text" data-tab="detail">DJI Mavic Type-C connector - кабель для соединения пульта управления квадрокоптера DJI Mavic Pro с мобильным устройством посредством порта Reverse Micro USB.</div>
+	</div>
+</div>
+<div id="bxr-additional-info" class="row"></div>
+
+Радимо використовувати для зарядки <a href="https://dronestore.com.ua/shop/hab-two-way-charging-hub-dji-mini3-pro/">ХАБ</a>
+
+Рекомендуований зарядний пристрій: зарядний пристрій USB-C DJI потужістю 30 Вт або інший зарядний пристрій  USB Power Delivery.
+<h3 style="text-align: center;"><span style="color: #000000;" data-darkreader-inline-color="">Акумулятор (battery) DJI Mini 4 - купити в Києві та Україні</span></h3>
+<p style="text-align: center;"><span style="color: #000000;" data-darkreader-inline-color="">Купити акумулятор (батарею) для дрона <strong>Мини 4</strong> в Києві та Україні в інтернет-магазині <a style="color: #000000;" href="https://dronestore.com.ua/uk/" data-darkreader-inline-color="">DroneStore.com.ua</a> - Найбільний вибір дронів в Україні. Гарантія 12 місяців від <a style="color: #000000;" href="https://www.dji.com/" data-darkreader-inline-color="">виробника</a>. Доставка по Києву та Україні - Безкоштовна.</span></p>"
+
+То, что внутри комментария - не переводим, пример:
+<!-- обычный шорт код для cf7 -->
+
+Также обрати внимание на Tailwind-скобки ("py-[0.2rem]"), чтобы функция правильно их обрабатывала, пример:
+"<div id="bxr-detail-block-wrap" class="row tb20 py-[0.2rem]">"
+
+5.2 Теги с разметкой WPBakery Page Builder и html:
+"[vc_row]
+    [vc_column css=".vc_custom_1493407566663{padding-top: 100px !important;}"]
+        [vc_column_text]
+            <h1>DJI Phantom 4 - функции и особенности</h1>
+        [/vc_column_text]
+        [vc_tta_tour style="flat" shape="square" controls_size="md" active_section="1"]
+            [vc_tta_section title="Революционные материалы и улучшеная аэродинамика" tab_id="1469138165604-165153d8-9412"]
+                [vc_single_image image="425" img_size="medium" css_animation="left-to-right"]
+                [vc_column_text]
+                    <div class="wording-area aim-right">
+                         <div class="type20-pdp-title image-title text-fix-widow">Только ты, твои мысли и невероятный звук.</div>
+                    </div>
+                    Новая улучшенная центральная рама из магниевого сплава увеличивает жесткость Phantom 4 без ущерба для веса.
+                [/vc_column_text]
+            [/vc_tta_section]
+            [vc_tta_section title="Настройка пульта" tab_id="1469138890801-2dbd2fcf-b3db"]
+                [vc_single_image image="438" img_size="full"]
+                [vc_column_text]
+                    <h2 class="_2e90 _2e93 _2e95 feature-section-1__title" style="text-align: center;">Простая настройка</h2>
+                    Гибкая настройка пульта управления позволяет адаптировать его к вашей манере полета и сделать функционал удобный для вас.
+                    <table class=" aligncenter">
+						<thead>
+							<tr>
+								<td><strong>Параметр</strong></td>
+								<td><strong>Значення</strong></td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><b>Макс. час польоту</b></td>
+								<td>До 45 хвилин (в ідеальних умовах)</td>
+							</tr>
+							<tr>
+								<td><b>Система передачі</b></td>
+								<td>DJI O3 Enterprise (до 8 км CE)</td>
+							</tr>
+						</tbody>
+					</table>
+                [/vc_column_text]
+            [/vc_tta_section]
+        [/vc_tta_tour]
+        [vc_video link="https://www.youtube.com/watch?v=JJPSSqMQajA" title="DJI Phantom 4 - Видео обзор"]
+        [vc_column_text]
+            <h1>Дрон DJI Phantom 4 - Купить в Киеве и Украине</h1>
+            <p style="text-align: center;">Бесконечные съемки сценариев. Один гибкое решение.</p>
+            <strong>Конструкция: </strong>Карбоновое покрытие ножек, теперь гармонично дополнено магниево-алюминиевым композитом корпуса
+            Купить Квадрокоптер DJI Phantom 4 вы можете в интернет магазине <a href="http://dronestore.com.ua">DroneStore</a> - официального дилера DJI.
+            Официальный сайт DJI: <a href="http://dji.com">dji.com</a>
+        [/vc_column_text]
+    [/vc_column]
+[/vc_row]"
+
+Комментарий по поводу перевода контента для этого варианта: нужно переводить не только текст внутри html и WPBakery Page Builder, но и в значениях атрибутов тегов WPBakery Page Builder. Например тут:
+
+            [vc_tta_section title="Революционные материалы и улучшеная аэродинамика" tab_id="1469138165604-165153d8-9412"]
+                [vc_single_image image="425" img_size="medium" css_animation="left-to-right"]
+                [vc_column_text]
+                    <h3>Революционные материалы и улучшенная аэродинамика</h3>
+                    Новая улучшенная центральная рама из магниевого сплава увеличивает жесткость Phantom 4 без ущерба для веса.
+                [/vc_column_text]
+            [/vc_tta_section]
+
+Нужно перевести vc_tta_section.title, vc_column_text.h3.innertext и vc_column_text.innertext
+
+Также еще момент по этому примеру,обрати внимание на фрагмент:
+"[vc_column css=".vc_custom_1493407566663{padding-top: 100px !important;}"]" - внутри квадратных скобок есть фигурные со стилями, нужно правильно их обработать.
+
+5.3 Среди прочего, могут встречаться Html таблицы:
+
+"<table cellspacing="1" cellpadding="1">
+    <tbody>
+        <tr>
+            <td>Точность:</td>
+            <td><span id="result_box" lang="ru">По вертикали: + / - 0.1м, </span><span id="result_box" class="short_text" lang="ru">yровень: + / - 1,5 м</span></td>
+        </tr>
+        <tr>
+            <td><span id="result_box" class="short_text" lang="ru">Cкорость подъема:</span></td>
+            <td><span id="result_box" lang="ru">Максимальная скорость при наборе высоты: 6 м / с (режим Novice 4 м / с)</span></td>
+        </tr>
+    </tbody>
+</table>
+<p><strong>В комплекте:</strong></p>
+<ul>
+    <li><strong>квадрокоптер Xiaomi Mi Drone</strong></li>
+    <li>аккумулятор 4S 15.2V 5100mAh 77.52Wh LiPo <em>(с индикацией заряда)</em></li>
+    <li>трансмиттер с встроенным держателем для смартфона</li>
+</ul>"
+
+ В таблицах будем переводить только: table.tbody.tr.td.innertext или table.tbody.tr.td.{любой html тег}.innertext например table.tbody.tr.td.span.innertext
+
+
+5.4 Файлы изображений и другие файлы могуть содержать в названиях кириллицу, например:
+<img class="aligncenter wp-image-22772 size-full" src="https://dronestore.com.ua/wp-content/uploads/2025/10/фото-дрона_1.jpg" alt="dji neo 2" width="730" height="632" />
+Названия файлов с кириллицей - не переводим.
+
+5.5 html cписков с вложенными списками, например:
+
+"<ul>
+	<li><strong>DJI Matrice 4T</strong>:
+		<ul>
+			<li>Великі інспекційні проєкти</li>
+			<li>Професійне картографування</li>
+			<li>Пошук і рятування з великих висот</li>
+			<li>Там, де потрібен лазерний далекомір і гнучкість модулів</li>
+		</ul>
+	</li>
+	<li><strong>DJI Mavic 3T</strong>:
+		<ul>
+			<li>Мобільність і швидкий запуск</li>
+			<li>Оперативна робота поліції, пожежників</li>
+			<li>Швидкі інспекції дахів, ліній електропередач</li>
+			<li>Користувачам, які хочуть щось професійне, але легке</li>
+			<li><span style="color: #ff6600;">Про використання дронів у зоні бойових дій писати немає сенсу і так всі все знають </span></li>
+		</ul>
+	</li>
+</ul>"
+
+Тут переводим ul.li.{any html tag}.innertext и ul.li.ul.li.{any html tag}.innertext, например ul.li.strong.innertext и ul.li.ul.li.span.innertext
+
+
+5.6 Также если ячейка имеет очень много контента, попробуй разбить запрос на несколько запросов к api чтобы гугл не выбрасывал ошибку. Этот пункт опциональный, если его можно реализовать сравнително просто и надежно - сделай это.
+
+5.7 Скрипт будет работать на бесплатном аккаунте google api, поэтому нужно следить за лимитами для перевода в сутки. Добавь перед переводом каждой ячейки проверку перевода одним словом, например такой функцией:
+
+/**
+ * Отправляет тестовое слово в LanguageApp чтобы убедиться что сервис работает.
+ * Если получаем то же слово обратно или ошибку — сервис недоступен.
+ *
+ * @param {string} toLang Целевой язык для проверки
+ * @return {boolean} true — сервис работает, false — недоступен
+ * @private
+ */
+function isTranslationWorking_(toLang) {
+  try {
+    const testWord = "Hello";
+    // Переводим с английского на целевой язык
+    const result = LanguageApp.translate(testWord, "en", toLang).toLowerCase().trim();
+    // Если получили обратно "hello" — перевод не сработал (сервис вернул исходник)
+    return result !== "hello";
+  } catch (e) {
+    return false;
+  }
+}
+
+
+```
