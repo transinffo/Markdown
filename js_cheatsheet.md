@@ -1,5 +1,177 @@
 # 🌈 JavaScript Cheat Sheet
 
+## 📦 Программно кликаем по переводу заголовка и контента поста
+
+```js
+// ==================== НАСТРОЙКИ (КОНФИГ) ====================
+const TARGET_LANG = 'ru'; // Код целевого языка ('uk' или 'ru')
+const DELAY = 5000;       // Единая задержка для всего (клики, ожидания) в мс
+
+// Шаблон URL. Обязательно оставляй {post_id} там, где должен быть ID страницы
+const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/post.php?post={post_id}&action=edit';
+
+// Твой массив ID постов
+const POST_IDS = [
+    25121, 25122, 25118, 25119, 25120, 25115, 25116, 25117, 25114, 
+    25113, 25111, 25112, 25110, 25108, 25109, 25107, 25105, 25106, 25103, 
+    25104, 25102, 25100, 25101, 25098, 25099, 25097, 25096, 25094, 25095, 25093
+];
+// ============================================================
+
+// Сюда собираем статистику
+const result_array = [];
+
+// Универсальная функция задержки
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Функция-помощник: ждет появления класса mct-state-success у элемента
+async function waitForSuccessClass(element, postId, blockName) {
+    return new Promise((resolve) => {
+        if (element.className.includes('mct-state-success')) {
+            resolve(true);
+            return;
+        }
+
+        const observer = new MutationObserver((mutationsList) => {
+            for (const mutation of mutationsList) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (element.className.includes('mct-state-success')) {
+                        observer.disconnect();
+                        console.log(`[ID ${postId}][Сделано] ${blockName} переведен успешно.`);
+                        resolve(true);
+                    }
+                }
+            }
+        });
+
+        observer.observe(element, { attributes: true, attributeFilter: ['class'] });
+    });
+}
+
+// Главный управляющий раннер
+async function runMassAutomation() {
+    console.log(`%c[СТАРТ] Начинаем автоматическую обработку ${POST_IDS.length} постов...`, 'color: #0073aa; font-weight: bold; font-size: 14px;');
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.width = '100vw';
+    iframe.style.height = '100vh';
+    iframe.style.zIndex = '999999';
+    iframe.style.border = 'none';
+    iframe.style.background = '#fff';
+    document.body.appendChild(iframe);
+
+    for (let i = 0; i < POST_IDS.length; i++) {
+        const postId = POST_IDS[i];
+        console.log(`%c\n--- [Пост ${i + 1} из ${POST_IDS.length}] Работаем с ID: ${postId} ---`, 'color: #d54e21; font-weight: bold;');
+
+        const logEntry = await processSinglePost(iframe, postId);
+        result_array.push(logEntry);
+    }
+
+    // Завершение работы
+    iframe.remove();
+    console.log('%c\n[УСПЕХ] Робот закончил работу! Итоговый отчет ниже:', 'color: #46b450; font-weight: bold; font-size: 14px;');
+    
+    // Вывод красивой таблицы результатов
+    console.table(result_array);
+}
+
+// Функция обработки одного конкретного поста
+async function processSinglePost(iframe, postId) {
+    const status = {
+        post_id: postId,
+        page_download: 'failed',
+        title_translate: 'skipped',
+        content_translate: 'skipped',
+        page_save: 'skipped'
+    };
+
+    return new Promise((resolve) => {
+        // Динамически подставляем ID в шаблон адреса страницы
+        iframe.src = URL_TEMPLATE.replace('{post_id}', postId);
+
+        iframe.onload = async () => {
+            console.log(`[ID ${postId}] Страница загружена. Ожидаем инициализацию...`);
+            status.page_download = 'ok';
+            await delay(DELAY);
+
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+            // 1. ПЕРЕВОД ЗАГОЛОВКА
+            const titleGlobeBtn = iframeDoc.querySelector('#titlewrap .mct-wrapper button.mct-globe-btn');
+            if (!titleGlobeBtn) {
+                console.error(`[ID ${postId}][Ошибка] Глобус ЗАГОЛОВКА не найден.`);
+                resolve(status); return;
+            }
+
+            console.log(`[ID ${postId}][Заголовок] Клик по глобусу.`);
+            titleGlobeBtn.click();
+            await delay(DELAY);
+
+            const titleLangBtn = iframeDoc.querySelector(`#titlewrap .mct-wrapper .mct-dropdown button[data-code="${TARGET_LANG}"]`);
+            if (!titleLangBtn) {
+                console.error(`[ID ${postId}][Ошибка] Язык заголовка не найден.`);
+                resolve(status); return;
+            }
+
+            console.log(`[ID ${postId}][Заголовок] Клик по языку.`);
+            titleLangBtn.click();
+            
+            await waitForSuccessClass(titleGlobeBtn, postId, 'Заголовок');
+            status.title_translate = 'ok';
+            await delay(DELAY);
+
+            // 2. ПЕРЕВОД КОНТЕНТА
+            const contentGlobeBtn = iframeDoc.querySelector('#content + .mct-wrapper button.mct-globe-btn');
+            if (!contentGlobeBtn) {
+                console.error(`[ID ${postId}][Ошибка] Глобус КОНТЕНТА не найден.`);
+                resolve(status); return;
+            }
+
+            console.log(`[ID ${postId}][Контент] Клик по глобусу.`);
+            contentGlobeBtn.click();
+            await delay(DELAY);
+
+            const contentLangBtn = iframeDoc.querySelector(`#content + .mct-wrapper .mct-dropdown button[data-code="${TARGET_LANG}"]`);
+            if (!contentLangBtn) {
+                console.error(`[ID ${postId}][Ошибка] Язык контента не найден.`);
+                resolve(status); return;
+            }
+
+            console.log(`[ID ${postId}][Контент] Клик по языку.`);
+            contentLangBtn.click();
+
+            await waitForSuccessClass(contentGlobeBtn, postId, 'Контент');
+            status.content_translate = 'ok';
+            await delay(DELAY);
+
+            // 3. СОХРАНЕНИЕ
+            const publishBtn = iframeDoc.querySelector('input#publish');
+            if (!publishBtn) {
+                console.error(`[ID ${postId}][Ошибка] Кнопка "Обновить" не найдена.`);
+                resolve(status); return;
+            }
+
+            console.log(`[ID ${postId}][Сохранение] Клик по "Обновить".`);
+            publishBtn.click();
+            
+            // Задержка DELAY * 2 по ТЗ перед закрытием / переходом
+            await delay(DELAY * 2); 
+            status.page_save = 'ok';
+            console.log(`[ID ${postId}][ОК] Изменения сохранены.`);
+
+            resolve(status);
+        };
+    });
+}
+
+// Запуск автоматизации
+runMassAutomation();
+```
+
 ## 📦 Программно кликаем по свойствам категории в WP и обновляем
 
 ```js
