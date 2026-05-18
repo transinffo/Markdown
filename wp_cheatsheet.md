@@ -6,7 +6,7 @@
 [...document.querySelectorAll('tr[id^="tag-"]')]
   .map(el => el.id.replace('tag-', ''))
   .join(', ') +
-');'
+') LIMIT 0, 500;'
 ```
 
 
@@ -16,7 +16,7 @@
 [...document.querySelectorAll('tr[id^="post-"]')]
   .map(el => el.id.replace('post-', ''))
   .join(', ') +
-');'
+') LIMIT 0, 500;'
 ```
 
 ## ✅  Программно кликаем по кнопке Обновить на странице списка товаров woocommerce
