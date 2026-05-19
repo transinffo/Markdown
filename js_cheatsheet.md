@@ -10,6 +10,15 @@ const DELAY = 5000;       // Единая задержка для всего (к
 // Шаблон URL. Обязательно оставляй {post_id} там, где должен быть ID страницы
 const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/post.php?post={post_id}&action=edit';
 
+// Селекторы элементов, которые нужно перевести последовательно.
+const FIELDS_TO_TRANSLATE = [
+    { name: 'Заголовок', selector: '#title' },
+    { name: 'Контент', selector: '#content' },
+    { name: 'Краткое описание', selector: '#excerpt' },
+    { name: 'Кастомный таб заголовок', selector: '#custom_tab1_title' },
+    { name: 'Кастомный таб контент', selector: '#custom_tab1' }
+];
+
 // Твой массив ID постов
 const POST_IDS = [
     25121, 25122, 25118, 25119, 25120, 25115, 25116, 25117, 25114, 
@@ -83,14 +92,16 @@ async function runMassAutomation() {
 async function processSinglePost(iframe, postId) {
     const status = {
         post_id: postId,
-        page_download: 'failed',
-        title_translate: 'skipped',
-        content_translate: 'skipped',
-        page_save: 'skipped'
+        page_download: 'failed'
     };
+    
+    // Предзаполняем поля статусом 'skipped'
+    FIELDS_TO_TRANSLATE.forEach(field => {
+        status[field.name] = 'skipped';
+    });
+    status['page_save'] = 'skipped';
 
     return new Promise((resolve) => {
-        // Динамически подставляем ID в шаблон адреса страницы
         iframe.src = URL_TEMPLATE.replace('{post_id}', postId);
 
         iframe.onload = async () => {
@@ -100,65 +111,73 @@ async function processSinglePost(iframe, postId) {
 
             const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
 
-            // 1. ПЕРЕВОД ЗАГОЛОВКА
-            const titleGlobeBtn = iframeDoc.querySelector('#titlewrap .mct-wrapper button.mct-globe-btn');
-            if (!titleGlobeBtn) {
-                console.error(`[ID ${postId}][Ошибка] Глобус ЗАГОЛОВКА не найден.`);
-                resolve(status); return;
+            // Цикл перевода по всем настроенным полям
+            for (const field of FIELDS_TO_TRANSLATE) {
+                const targetInput = iframeDoc.querySelector(field.selector);
+                
+                if (!targetInput) {
+                    console.warn(`[ID ${postId}][Внимание] Поле "${field.name}" не найдено на странице. Пропускаем.`);
+                    continue;
+                }
+
+                // ПРОВЕРКА НА ПУСТОТУ: если значения нет — сразу к следующему элементу
+                if (!targetInput.value || targetInput.value.trim() === "") {
+                    console.log(`[ID ${postId}][Пропуск] Поле "${field.name}" пустое. Переходим дальше.`);
+                    status[field.name] = 'empty';
+                    continue; // Переход без задержек
+                }
+
+                // Ищем соседний блок .mct-wrapper
+                let mctWrapper = targetInput.nextElementSibling;
+                if (!mctWrapper || !mctWrapper.classList.contains('mct-wrapper')) {
+                    mctWrapper = targetInput.parentElement.querySelector('.mct-wrapper');
+                }
+
+                if (!mctWrapper) {
+                    console.error(`[ID ${postId}][Ошибка] Блок перевода .mct-wrapper для поля "${field.name}" не найден.`);
+                    continue;
+                }
+
+                // Ищем глобус
+                const globeBtn = mctWrapper.querySelector('button.mct-globe-btn');
+                if (!globeBtn) {
+                    console.error(`[ID ${postId}][Ошибка] Кнопка глобуса для поля "${field.name}" не найдена.`);
+                    continue;
+                }
+
+                console.log(`[ID ${postId}][${field.name}] Клик по глобусу.`);
+                globeBtn.click();
+                await delay(DELAY);
+
+                // Ищем кнопку языка
+                const langBtn = mctWrapper.querySelector(`.mct-dropdown button[data-code="${TARGET_LANG}"]`);
+                if (!langBtn) {
+                    console.error(`[ID ${postId}][Ошибка] Язык "${TARGET_LANG}" для поля "${field.name}" не найден.`);
+                    continue;
+                }
+
+                console.log(`[ID ${postId}][${field.name}] Клик по языку.`);
+                langBtn.click();
+                
+                // Ждем окончания перевода
+                const success = await waitForSuccessClass(globeBtn, postId, field.name);
+                if (success) {
+                    status[field.name] = 'ok';
+                }
+                await delay(DELAY);
             }
 
-            console.log(`[ID ${postId}][Заголовок] Клик по глобусу.`);
-            titleGlobeBtn.click();
-            await delay(DELAY);
-
-            const titleLangBtn = iframeDoc.querySelector(`#titlewrap .mct-wrapper .mct-dropdown button[data-code="${TARGET_LANG}"]`);
-            if (!titleLangBtn) {
-                console.error(`[ID ${postId}][Ошибка] Язык заголовка не найден.`);
-                resolve(status); return;
-            }
-
-            console.log(`[ID ${postId}][Заголовок] Клик по языку.`);
-            titleLangBtn.click();
-            
-            await waitForSuccessClass(titleGlobeBtn, postId, 'Заголовок');
-            status.title_translate = 'ok';
-            await delay(DELAY);
-
-            // 2. ПЕРЕВОД КОНТЕНТА
-            const contentGlobeBtn = iframeDoc.querySelector('#content + .mct-wrapper button.mct-globe-btn');
-            if (!contentGlobeBtn) {
-                console.error(`[ID ${postId}][Ошибка] Глобус КОНТЕНТА не найден.`);
-                resolve(status); return;
-            }
-
-            console.log(`[ID ${postId}][Контент] Клик по глобусу.`);
-            contentGlobeBtn.click();
-            await delay(DELAY);
-
-            const contentLangBtn = iframeDoc.querySelector(`#content + .mct-wrapper .mct-dropdown button[data-code="${TARGET_LANG}"]`);
-            if (!contentLangBtn) {
-                console.error(`[ID ${postId}][Ошибка] Язык контента не найден.`);
-                resolve(status); return;
-            }
-
-            console.log(`[ID ${postId}][Контент] Клик по языку.`);
-            contentLangBtn.click();
-
-            await waitForSuccessClass(contentGlobeBtn, postId, 'Контент');
-            status.content_translate = 'ok';
-            await delay(DELAY);
-
-            // 3. СОХРАНЕНИЕ
+            // ФИНАЛЬНОЕ СОХРАНЕНИЕ
             const publishBtn = iframeDoc.querySelector('input#publish');
             if (!publishBtn) {
-                console.error(`[ID ${postId}][Ошибка] Кнопка "Обновить" не найдена.`);
+                console.error(`[ID ${postId}][Ошибка] Кнопка "Обновить" не найдена. Сохранение невозможно.`);
                 resolve(status); return;
             }
 
             console.log(`[ID ${postId}][Сохранение] Клик по "Обновить".`);
             publishBtn.click();
             
-            // Задержка DELAY * 2 по ТЗ перед закрытием / переходом
+            // Двойная задержка на запись в БД
             await delay(DELAY * 2); 
             status.page_save = 'ok';
             console.log(`[ID ${postId}][ОК] Изменения сохранены.`);
