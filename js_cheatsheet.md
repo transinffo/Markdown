@@ -10,20 +10,30 @@ const MAX_ATTEMPTS = 3;   // Количество попыток загрузк�
 const RETRY_DELAY = 15000; // Сколько ждать (в мс) перед повторной попыткой при ошибке
 
 // Шаблон URL. Обязательно оставляй {post_id} там, где должен быть ID страницы
-const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/post.php?post={post_id}&action=edit';
+//const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/post.php?post={post_id}&action=edit';
 
 // Селекторы элементов, которые нужно перевести последовательно.
+// const FIELDS_TO_TRANSLATE = [
+//     { name: 'Заголовок', selector: '#title' },
+//     { name: 'Контент', selector: '#content' },
+//     { name: 'Краткое описание', selector: '#excerpt' },
+//     { name: 'Кастомный таб заголовок', selector: '#custom_tab1_title' },
+//     { name: 'Кастомный таб контент', selector: '#custom_tab1' }
+// ];
+
+
+const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/term.php?taxonomy=product_cat&tag_ID={post_id}&post_type=product';
+
 const FIELDS_TO_TRANSLATE = [
-    { name: 'Заголовок', selector: '#title' },
-    { name: 'Контент', selector: '#content' },
-    { name: 'Краткое описание', selector: '#excerpt' },
-    { name: 'Кастомный таб заголовок', selector: '#custom_tab1_title' },
-    { name: 'Кастомный таб контент', selector: '#custom_tab1' }
+    { name: 'Заголовок', selector: '#name' },
+    { name: 'Описание', selector: '#description' }
 ];
+
+
 
 // Твой массив ID постов
 const POST_IDS = [
-    196, 190, 185, 180, 179, 178, 166, 162, 154, 142, 137, 133, 125, 92, 86, 81, 76, 72, 65, 57, 22, 42, 49
+    169, 240, 189, 188, 237, 190, 199, 211, 170, 273, 191, 192, 193, 297, 195, 194, 95, 81, 80, 79, 64, 67, 7, 9, 8, 135, 18, 69, 10, 172, 17, 164, 166, 167, 68, 143
 ];
 // ============================================================
 
@@ -241,7 +251,14 @@ async function processSinglePost(iframe, postId) {
             }
 
             // ФИНАЛЬНОЕ СОХРАНЕНИЕ
-            const publishBtn = iframeDoc.querySelector('input#publish');
+            //кнопка обновить для товара, поста, страницы
+            //const publishBtn = iframeDoc.querySelector('input#publish');
+
+            //кнопка обновить для категории
+            const publishBtn = iframeDoc.querySelector('.edit-tag-actions input[type="submit"]');
+
+
+
             if (!publishBtn) {
                 console.error(`[ID ${postId}][Ошибка] Кнопка "Обновить" не найдена.`);
                 resolve(status); return;
@@ -250,7 +267,7 @@ async function processSinglePost(iframe, postId) {
             console.log(`[ID ${postId}][Сохранение] Клик по "Обновить".`);
             publishBtn.click();
             
-            await delay(DELAY * 2); 
+            await delay(DELAY); 
             status.page_save = 'ok';
             console.log(`[ID ${postId}][ОК] Изменения сохранены.`);
 
