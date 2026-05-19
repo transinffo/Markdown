@@ -5,7 +5,7 @@
 ```js
 // ==================== НАСТРОЙКИ (КОНФИГ) ====================
 const TARGET_LANG = 'ru'; // Код целевого языка ('uk' или 'ru')
-const DELAY = 5000;       // Единая задержка для всего (клики, ожидания) в мс
+const DELAY = 2000;       // Единая задержка для всего (клики, ожидания) в мс
 
 // Шаблон URL. Обязательно оставляй {post_id} там, где должен быть ID страницы
 const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/post.php?post={post_id}&action=edit';
@@ -21,9 +21,7 @@ const FIELDS_TO_TRANSLATE = [
 
 // Твой массив ID постов
 const POST_IDS = [
-    25121, 25122, 25118, 25119, 25120, 25115, 25116, 25117, 25114, 
-    25113, 25111, 25112, 25110, 25108, 25109, 25107, 25105, 25106, 25103, 
-    25104, 25102, 25100, 25101, 25098, 25099, 25097, 25096, 25094, 25095, 25093
+    25012, 25013, 25011, 25009, 25010, 25008, 25006, 25007, 25004, 25005, 25003, 25001, 25002, 25000, 24998, 24999, 24996, 24997, 24994, 24995, 24992, 24993, 24991, 24990, 24988, 24989, 24987, 24986, 24984, 24985, 24983, 24981, 24982, 24979, 24980, 24978, 24976, 24977, 24975, 24973, 24974, 24972, 24971, 24969, 24970, 24968, 24966, 24967, 24965, 24964
 ];
 // ============================================================
 
@@ -59,6 +57,9 @@ async function waitForSuccessClass(element, postId, blockName) {
 
 // Главный управляющий раннер
 async function runMassAutomation() {
+    // Фиксируем время старта скрипта
+    const startTime = performance.now();
+
     console.log(`%c[СТАРТ] Начинаем автоматическую обработку ${POST_IDS.length} постов...`, 'color: #0073aa; font-weight: bold; font-size: 14px;');
 
     const iframe = document.createElement('iframe');
@@ -80,12 +81,25 @@ async function runMassAutomation() {
         result_array.push(logEntry);
     }
 
-    // Завершение работы
+    // Завершение работы с DOM
     iframe.remove();
+    
+    // Вычисляем затраченное время
+    const endTime = performance.now();
+    const timeSpentMs = endTime - startTime;
+    const minutes = Math.floor(timeSpentMs / 60000);
+    const seconds = Math.floor((timeSpentMs % 60000) / 1000);
+
     console.log('%c\n[УСПЕХ] Робот закончил работу! Итоговый отчет ниже:', 'color: #46b450; font-weight: bold; font-size: 14px;');
     
     // Вывод красивой таблицы результатов
     console.table(result_array);
+
+    // Вывод общего времени выполнения
+    console.log(
+        `%c⏱️ Общее время работы скрипта: ${minutes} мин. ${seconds} сек.`, 
+        'color: #0073aa; font-weight: bold; font-size: 13px; background: #f0f6fb; padding: 8px; border-left: 4px solid #11a0d2;'
+    );
 }
 
 // Функция обработки одного конкретного поста
@@ -120,11 +134,11 @@ async function processSinglePost(iframe, postId) {
                     continue;
                 }
 
-                // ПРОВЕРКА НА ПУСТОТУ: если значения нет — сразу к следующему элементу
+                // Проверка на пустоту
                 if (!targetInput.value || targetInput.value.trim() === "") {
                     console.log(`[ID ${postId}][Пропуск] Поле "${field.name}" пустое. Переходим дальше.`);
                     status[field.name] = 'empty';
-                    continue; // Переход без задержек
+                    continue; 
                 }
 
                 // Ищем соседний блок .mct-wrapper
