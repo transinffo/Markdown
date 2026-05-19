@@ -10,9 +10,9 @@ const MAX_ATTEMPTS = 3;   // Количество попыток загрузк�
 const RETRY_DELAY = 15000; // Сколько ждать (в мс) перед повторной попыткой при ошибке
 
 // Шаблон URL. Обязательно оставляй {post_id} там, где должен быть ID страницы
-//const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/post.php?post={post_id}&action=edit';
 
-// Селекторы элементов, которые нужно перевести последовательно.
+// ходим по страницам woo товара, постам и страницам
+//const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/post.php?post={post_id}&action=edit';
 // const FIELDS_TO_TRANSLATE = [
 //     { name: 'Заголовок', selector: '#title' },
 //     { name: 'Контент', selector: '#content' },
@@ -21,9 +21,8 @@ const RETRY_DELAY = 15000; // Сколько ждать (в мс) перед п�
 //     { name: 'Кастомный таб контент', selector: '#custom_tab1' }
 // ];
 
-
+// ходим по категориям woo товара
 const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/term.php?taxonomy=product_cat&tag_ID={post_id}&post_type=product';
-
 const FIELDS_TO_TRANSLATE = [
     { name: 'Заголовок', selector: '#name' },
     { name: 'Описание', selector: '#description' }
