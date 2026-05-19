@@ -4,8 +4,10 @@
 
 ```js
 // ==================== НАСТРОЙКИ (КОНФИГ) ====================
-const TARGET_LANG = 'ru'; // Код целевого языка ('uk' или 'ru')
-const DELAY = 2000;       // Единая задержка для всего (клики, ожидания) в мс
+const TARGET_LANG = 'uk'; // Код целевого языка ('uk' или 'ru')
+const DELAY = 1000;       // Единая задержка для всего (клики, ожидания) в мс
+const MAX_ATTEMPTS = 3;   // Количество попыток загрузки страницы при сбое сети
+const RETRY_DELAY = 15000; // Сколько ждать (в мс) перед повторной попыткой при ошибке
 
 // Шаблон URL. Обязательно оставляй {post_id} там, где должен быть ID страницы
 const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/post.php?post={post_id}&action=edit';
@@ -21,12 +23,17 @@ const FIELDS_TO_TRANSLATE = [
 
 // Твой массив ID постов
 const POST_IDS = [
-    25012, 25013, 25011, 25009, 25010, 25008, 25006, 25007, 25004, 25005, 25003, 25001, 25002, 25000, 24998, 24999, 24996, 24997, 24994, 24995, 24992, 24993, 24991, 24990, 24988, 24989, 24987, 24986, 24984, 24985, 24983, 24981, 24982, 24979, 24980, 24978, 24976, 24977, 24975, 24973, 24974, 24972, 24971, 24969, 24970, 24968, 24966, 24967, 24965, 24964
+    196, 190, 185, 180, 179, 178, 166, 162, 154, 142, 137, 133, 125, 92, 86, 81, 76, 72, 65, 57, 22, 42, 49
 ];
 // ============================================================
 
-// Сюда собираем статистику
-const result_array = [];
+// Ключи для сохранения состояния в браузере
+const STORAGE_KEY_RESULTS = 'wp_automation_results';
+const STORAGE_KEY_DONE_IDS = 'wp_automation_done_ids';
+
+// Инициализация хранилища (достаем старый прогресс, если он есть)
+const result_array = JSON.parse(localStorage.getItem(STORAGE_KEY_RESULTS)) || [];
+const done_post_ids = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY_DONE_IDS)) || []);
 
 // Универсальная функция задержки
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -57,10 +64,22 @@ async function waitForSuccessClass(element, postId, blockName) {
 
 // Главный управляющий раннер
 async function runMassAutomation() {
-    // Фиксируем время старта скрипта
     const startTime = performance.now();
 
-    console.log(`%c[СТАРТ] Начинаем автоматическую обработку ${POST_IDS.length} постов...`, 'color: #0073aa; font-weight: bold; font-size: 14px;');
+    // Фильтруем массив: оставляем только те ID, которые ЕЩЕ НЕ переведены
+    const remainingIds = POST_IDS.filter(id => !done_post_ids.has(id));
+
+    if (remainingIds.length === 0) {
+        console.log('%c[ИНФО] Все посты из списка уже были успешно обработаны ранее! Сбрасываю кэш.', 'color: #cca300; font-weight: bold;');
+        clearProgress();
+        return;
+    }
+
+    if (done_post_ids.size > 0) {
+        console.log(`%c[ПРОДОЛЖЕНИЕ] Найдена сохраненная сессия. Уже сделано: ${done_post_ids.size}. Осталось обработать: ${remainingIds.length} постов.`, 'color: #73aa00; font-weight: bold;');
+    } else {
+        console.log(`%c[СТАРТ] Начинаем автоматическую обработку ${POST_IDS.length} постов...`, 'color: #0073aa; font-weight: bold; font-size: 14px;');
+    }
 
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
@@ -73,89 +92,133 @@ async function runMassAutomation() {
     iframe.style.background = '#fff';
     document.body.appendChild(iframe);
 
-    for (let i = 0; i < POST_IDS.length; i++) {
-        const postId = POST_IDS[i];
-        console.log(`%c\n--- [Пост ${i + 1} из ${POST_IDS.length}] Работаем с ID: ${postId} ---`, 'color: #d54e21; font-weight: bold;');
+    // Идем только по оставшимся ID
+    for (let i = 0; i < remainingIds.length; i++) {
+        const postId = remainingIds[i];
+        const overallIndex = done_post_ids.size + 1;
+        console.log(`%c\n--- [Пост ${overallIndex} из ${POST_IDS.length}] Работаем с ID: ${postId} ---`, 'color: #d54e21; font-weight: bold;');
 
-        const logEntry = await processSinglePost(iframe, postId);
+        let logEntry = null;
+        let attempt = 1;
+        let success = false;
+
+        // Цикл повторных попыток на случай обрыва сети
+        while (attempt <= MAX_ATTEMPTS && !success) {
+            try {
+                if (attempt > 1) {
+                    console.log(`%c[ID ${postId}] Попытка №${attempt}... Ожидаем восстановления сети (${RETRY_DELAY / 1000} сек)`, 'color: #cca300;');
+                    await delay(RETRY_DELAY);
+                }
+                
+                logEntry = await processSinglePost(iframe, postId);
+                
+                // Если страница вообще не загрузилась (сеть легла до onload)
+                if (logEntry.page_download === 'failed') {
+                    throw new Error('Ошибка загрузки страницы (возможно, нет интернета)');
+                }
+                
+                success = true; // Если дошли сюда без ошибок — всё ок
+            } catch (error) {
+                console.error(`[ID ${postId}][Сбой сети] Ошибка на попытке ${attempt}: ${error.message}`);
+                attempt++;
+            }
+        }
+
+        // Если все попытки провалились
+        if (!success) {
+            console.error(`%c[ID ${postId}][ПРОПУСК] Не удалось обработать пост после ${MAX_ATTEMPTS} попыток. Переходим к следующему.`, 'color: #dc3232; font-weight: bold;');
+            logEntry = { post_id: postId, page_download: 'network_error_timeout' };
+            FIELDS_TO_TRANSLATE.forEach(f => logEntry[f.name] = 'failed');
+            logEntry.page_save = 'failed';
+        }
+
+        // Сохраняем шаг в кэш браузера, чтобы не потерять при перезагрузке страницы
         result_array.push(logEntry);
+        done_post_ids.add(postId);
+        
+        localStorage.setItem(STORAGE_KEY_RESULTS, JSON.stringify(result_array));
+        localStorage.setItem(STORAGE_KEY_DONE_IDS, JSON.stringify(Array.from(done_post_ids)));
     }
 
     // Завершение работы с DOM
     iframe.remove();
     
-    // Вычисляем затраченное время
     const endTime = performance.now();
     const timeSpentMs = endTime - startTime;
     const minutes = Math.floor(timeSpentMs / 60000);
     const seconds = Math.floor((timeSpentMs % 60000) / 1000);
 
     console.log('%c\n[УСПЕХ] Робот закончил работу! Итоговый отчет ниже:', 'color: #46b450; font-weight: bold; font-size: 14px;');
-    
-    // Вывод красивой таблицы результатов
     console.table(result_array);
+    console.log(`%c⏱️ Время текущей сессии: ${minutes} мин. ${seconds} сек.`, 'color: #0073aa; font-weight: bold; font-size: 13px; background: #f0f6fb; padding: 8px; border-left: 4px solid #11a0d2;');
 
-    // Вывод общего времени выполнения
-    console.log(
-        `%c⏱️ Общее время работы скрипта: ${minutes} мин. ${seconds} сек.`, 
-        'color: #0073aa; font-weight: bold; font-size: 13px; background: #f0f6fb; padding: 8px; border-left: 4px solid #11a0d2;'
-    );
+    // Очищаем кэш после успешного выполнения всего списка
+    clearProgress();
+}
+
+// Функция очистки кэша прогресса
+function clearProgress() {
+    localStorage.removeItem(STORAGE_KEY_RESULTS);
+    localStorage.removeItem(STORAGE_KEY_DONE_IDS);
+    console.log('%c[КЭШ ПОДЧИЩЕН] Состояние сброшено, следующий запуск начнется заново.', 'color: #999; font-style: italic;');
 }
 
 // Функция обработки одного конкретного поста
 async function processSinglePost(iframe, postId) {
-    const status = {
-        post_id: postId,
-        page_download: 'failed'
-    };
-    
-    // Предзаполняем поля статусом 'skipped'
-    FIELDS_TO_TRANSLATE.forEach(field => {
-        status[field.name] = 'skipped';
-    });
+    const status = { post_id: postId, page_download: 'failed' };
+    FIELDS_TO_TRANSLATE.forEach(field => status[field.name] = 'skipped');
     status['page_save'] = 'skipped';
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+        // Ставим таймаут на случай, если iframe зависнет при мёртвом интернете
+        const networkTimeout = setTimeout(() => {
+            resolve(status); 
+        }, 30000); // 30 секунд на загрузку страницы, иначе считаем ошибкой
+
         iframe.src = URL_TEMPLATE.replace('{post_id}', postId);
 
         iframe.onload = async () => {
+            clearTimeout(networkTimeout);
             console.log(`[ID ${postId}] Страница загружена. Ожидаем инициализацию...`);
             status.page_download = 'ok';
             await delay(DELAY);
 
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            let iframeDoc;
+            try {
+                iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            } catch(e) {
+                // Защита от Cross-Origin ошибок, если упали на страницу ошибки провайдера
+                resolve(status); return;
+            }
 
             // Цикл перевода по всем настроенным полям
             for (const field of FIELDS_TO_TRANSLATE) {
                 const targetInput = iframeDoc.querySelector(field.selector);
                 
                 if (!targetInput) {
-                    console.warn(`[ID ${postId}][Внимание] Поле "${field.name}" не найдено на странице. Пропускаем.`);
+                    console.warn(`[ID ${postId}][Внимание] Поле "${field.name}" не найдено. Пропускаем.`);
                     continue;
                 }
 
-                // Проверка на пустоту
                 if (!targetInput.value || targetInput.value.trim() === "") {
-                    console.log(`[ID ${postId}][Пропуск] Поле "${field.name}" пустое. Переходим дальше.`);
+                    console.log(`[ID ${postId}][Пропуск] Поле "${field.name}" пустое.`);
                     status[field.name] = 'empty';
                     continue; 
                 }
 
-                // Ищем соседний блок .mct-wrapper
                 let mctWrapper = targetInput.nextElementSibling;
                 if (!mctWrapper || !mctWrapper.classList.contains('mct-wrapper')) {
                     mctWrapper = targetInput.parentElement.querySelector('.mct-wrapper');
                 }
 
                 if (!mctWrapper) {
-                    console.error(`[ID ${postId}][Ошибка] Блок перевода .mct-wrapper для поля "${field.name}" не найден.`);
+                    console.error(`[ID ${postId}][Ошибка] .mct-wrapper для "${field.name}" не найден.`);
                     continue;
                 }
 
-                // Ищем глобус
                 const globeBtn = mctWrapper.querySelector('button.mct-globe-btn');
                 if (!globeBtn) {
-                    console.error(`[ID ${postId}][Ошибка] Кнопка глобуса для поля "${field.name}" не найдена.`);
+                    console.error(`[ID ${postId}][Ошибка] Кнопка глобуса для "${field.name}" не найдена.`);
                     continue;
                 }
 
@@ -163,35 +226,30 @@ async function processSinglePost(iframe, postId) {
                 globeBtn.click();
                 await delay(DELAY);
 
-                // Ищем кнопку языка
                 const langBtn = mctWrapper.querySelector(`.mct-dropdown button[data-code="${TARGET_LANG}"]`);
                 if (!langBtn) {
-                    console.error(`[ID ${postId}][Ошибка] Язык "${TARGET_LANG}" для поля "${field.name}" не найден.`);
+                    console.error(`[ID ${postId}][Ошибка] Язык "${TARGET_LANG}" для "${field.name}" не найден.`);
                     continue;
                 }
 
                 console.log(`[ID ${postId}][${field.name}] Клик по языку.`);
                 langBtn.click();
                 
-                // Ждем окончания перевода
                 const success = await waitForSuccessClass(globeBtn, postId, field.name);
-                if (success) {
-                    status[field.name] = 'ok';
-                }
+                if (success) status[field.name] = 'ok';
                 await delay(DELAY);
             }
 
             // ФИНАЛЬНОЕ СОХРАНЕНИЕ
             const publishBtn = iframeDoc.querySelector('input#publish');
             if (!publishBtn) {
-                console.error(`[ID ${postId}][Ошибка] Кнопка "Обновить" не найдена. Сохранение невозможно.`);
+                console.error(`[ID ${postId}][Ошибка] Кнопка "Обновить" не найдена.`);
                 resolve(status); return;
             }
 
             console.log(`[ID ${postId}][Сохранение] Клик по "Обновить".`);
             publishBtn.click();
             
-            // Двойная задержка на запись в БД
             await delay(DELAY * 2); 
             status.page_save = 'ok';
             console.log(`[ID ${postId}][ОК] Изменения сохранены.`);
