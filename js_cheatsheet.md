@@ -5,34 +5,34 @@
 ```js
 // ==================== НАСТРОЙКИ (КОНФИГ) ====================
 const TARGET_LANG = 'uk'; // Код целевого языка ('uk' или 'ru')
-const DELAY = 1000;       // Единая задержка для всего (клики, ожидания) в мс
+const DELAY = 2000;       // Единая задержка для всего (клики, ожидания) в мс
 const MAX_ATTEMPTS = 3;   // Количество попыток загрузки страницы при сбое сети
 const RETRY_DELAY = 15000; // Сколько ждать (в мс) перед повторной попыткой при ошибке
 
 // Шаблон URL. Обязательно оставляй {post_id} там, где должен быть ID страницы
 
 // ходим по страницам woo товара, постам и страницам
-//const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/post.php?post={post_id}&action=edit';
-// const FIELDS_TO_TRANSLATE = [
-//     { name: 'Заголовок', selector: '#title' },
-//     { name: 'Контент', selector: '#content' },
-//     { name: 'Краткое описание', selector: '#excerpt' },
-//     { name: 'Кастомный таб заголовок', selector: '#custom_tab1_title' },
-//     { name: 'Кастомный таб контент', selector: '#custom_tab1' }
-// ];
+const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/post.php?post={post_id}&action=edit';
+const FIELDS_TO_TRANSLATE = [
+    { name: 'Заголовок', selector: '#title' },
+    { name: 'Контент', selector: '#content' },
+    { name: 'Краткое описание', selector: '#excerpt' },
+    { name: 'Кастомный таб заголовок', selector: '#custom_tab1_title' },
+    { name: 'Кастомный таб контент', selector: '#custom_tab1' }
+];
 
 // ходим по категориям woo товара
-const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/term.php?taxonomy=product_cat&tag_ID={post_id}&post_type=product';
-const FIELDS_TO_TRANSLATE = [
-    { name: 'Заголовок', selector: '#name' },
-    { name: 'Описание', selector: '#description' }
-];
+// const URL_TEMPLATE = 'https://test.dronestore.com.ua/wp-admin/term.php?taxonomy=product_cat&tag_ID={post_id}&post_type=product';
+// const FIELDS_TO_TRANSLATE = [
+//     { name: 'Заголовок', selector: '#name' },
+//     { name: 'Описание', selector: '#description' }
+// ];
 
 
 
 // Твой массив ID постов
 const POST_IDS = [
-    169, 240, 189, 188, 237, 190, 199, 211, 170, 273, 191, 192, 193, 297, 195, 194, 95, 81, 80, 79, 64, 67, 7, 9, 8, 135, 18, 69, 10, 172, 17, 164, 166, 167, 68, 143
+    92, 142, 571, 1354, 1859, 1891, 1893, 2187, 3229, 5209, 5220, 5643, 6437, 6506, 7006, 7048, 7324, 7763, 8211, 8221, 9114, 9217, 9284, 9463, 9591, 9628, 9689, 10091, 17229, 17884, 19062, 19339, 20792
 ];
 // ============================================================
 
@@ -251,10 +251,10 @@ async function processSinglePost(iframe, postId) {
 
             // ФИНАЛЬНОЕ СОХРАНЕНИЕ
             //кнопка обновить для товара, поста, страницы
-            //const publishBtn = iframeDoc.querySelector('input#publish');
+            const publishBtn = iframeDoc.querySelector('input#publish');
 
             //кнопка обновить для категории
-            const publishBtn = iframeDoc.querySelector('.edit-tag-actions input[type="submit"]');
+            //const publishBtn = iframeDoc.querySelector('.edit-tag-actions input[type="submit"]');
 
 
 
