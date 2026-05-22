@@ -4,6 +4,7 @@
 
 ```js
 // ==================== НАСТРОЙКИ (КОНФИГ) ====================
+// /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --disable-web-security --user-data-dir="/tmp/chrome_dev_test"
 const TARGET_LANG = 'ru'; // Код целевого языка ('uk' или 'ru')
 const DELAY = 1000;       // Единая задержка для всего (клики, ожидания) в мс
 const MAX_ATTEMPTS = 3;   // Количество попыток загрузки страницы при сбое сети
