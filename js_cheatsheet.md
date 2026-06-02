@@ -1,5 +1,29 @@
 # 🌈 JavaScript Cheat Sheet
 
+## 📦 Красивый вывод в консоль браузера массива _FAST_CACHE
+
+```js
+(() => {
+    if (window.ApolloCacheState && window.ApolloCacheState._FAST_CACHE) {
+        const cacheData = window.ApolloCacheState._FAST_CACHE;
+        
+        // Превращаем объект в красивую JSON-строку с отступом в 4 пробела
+        const prettyJson = JSON.stringify(cacheData, null, 4);
+        
+        console.clear();
+        console.log("%c--- КРАСИВЫЙ JSON (ОБЪЕКТ _FAST_CACHE) ---", "color: #00ff00; font-weight: bold;");
+        console.log(prettyJson);
+        
+        // Автоматически копируем этот JSON в буфер обмена, чтобы вы могли сразу вставить его в текстовый редактор
+        copy(prettyJson);
+        console.log("%c[Успех] Весь JSON скопирован в буфер обмена! Нажмите Ctrl+V в любом редакторе.", "color: #1e90ff;");
+        
+    } else {
+        console.error("window.ApolloCacheState._FAST_CACHE не найден.");
+    }
+})();
+```
+
 ## 📦 Программно кликаем по переводу заголовка и контента поста версия 1.2 (логи в строку)
 
 ```js
