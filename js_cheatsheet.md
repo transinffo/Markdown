@@ -3,29 +3,53 @@
 ## 📦 Красивый вывод корневой структуры репозитория гитхаба
 
 ```js
-(async () => {
+//Сохранить токен один раз
+//localStorage.setItem('gh_token', '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');
+
+(async (options = {}) => {
   const match = location.pathname.match(/^\/([^\/]+)\/([^\/]+)/);
   if (!match) return console.log('Not a GitHub repo page');
 
   const owner = match[1];
   const repo = match[2].replace(/\/.*/, '');
 
+  // 🔑 токен: options → localStorage → null
+  const token =
+    options.token ||
+    localStorage.getItem('gh_token') ||
+    null;
+
+  const {
+    maxDepth = Infinity,
+    ignore = ['node_modules', '.git', 'vendor', 'build']
+  } = options;
+
   const base = `https://api.github.com/repos/${owner}/${repo}/contents`;
 
   let output = '';
 
-  const walk = async (url, prefix = '') => {
-    const res = await fetch(url);
-    const items = await res.json();
+  const headers = token
+    ? { Authorization: `token ${token}` }
+    : {};
 
-    if (!Array.isArray(items)) {
-      console.log('API error:', items);
+  const walk = async (url, prefix = '', depth = 0) => {
+    if (depth > maxDepth) return;
+
+    const res = await fetch(url, { headers });
+    const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      console.log('API error:', data);
       return;
     }
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const isLast = i === items.length - 1;
+    const filtered = data.filter(i =>
+      !ignore.some(skip => i.path?.includes(skip) || i.name?.includes(skip))
+    );
+
+    for (let i = 0; i < filtered.length; i++) {
+      const item = filtered[i];
+      const isLast = i === filtered.length - 1;
 
       const branch = isLast ? '└── ' : '├── ';
       const nextPrefix = prefix + (isLast ? '    ' : '│   ');
@@ -33,21 +57,25 @@
       output += prefix + branch + item.name + '\n';
 
       if (item.type === 'dir') {
-        await walk(item.url, nextPrefix);
+        await walk(item.url, nextPrefix, depth + 1);
       }
     }
   };
 
-  await walk(base);
-
-  console.log(output);
-
   try {
-    await navigator.clipboard.writeText(output);
-    console.log('✅ Copied to clipboard');
+    await walk(base);
+
+    console.log(output);
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(output);
+      console.log('✅ Copied to clipboard');
+    } else {
+      console.log('📋 Copy manually');
+    }
+
   } catch (e) {
-    console.log('❌ Clipboard failed:', e);
-    console.log('📋 Copy manually from console output above');
+    console.error('❌ Error:', e);
   }
 })();
 ```
