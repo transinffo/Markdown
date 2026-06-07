@@ -1,5 +1,46 @@
 # 🌈 JavaScript Cheat Sheet
 
+## 📦 Красивый вывод корневой структуры репозитория гитхаба
+
+```js
+(async () => {
+  const base = 'https://api.github.com/repos/transinffo/ajax-search-for-woocommerce/contents';
+
+  let output = '';
+
+  const walk = async (url, indent = '') => {
+    const res = await fetch(url);
+    const items = await res.json();
+
+    if (!Array.isArray(items)) {
+      console.log('API error:', items);
+      return;
+    }
+
+    for (const item of items) {
+      const icon = item.type === 'dir' ? '├── ' : '└── ';
+      output += indent + icon + item.name + '\n';
+
+      if (item.type === 'dir') {
+        await walk(item.url, indent + '│   ');
+      }
+    }
+  };
+
+  await walk(base);
+
+  console.log(output);
+
+  // копирование в буфер
+  try {
+    await navigator.clipboard.writeText(output);
+    console.log('✅ Tree copied to clipboard');
+  } catch (e) {
+    console.log('❌ Copy failed:', e);
+  }
+})();
+```
+
 ## 📦 Красивый вывод в консоль браузера массива _FAST_CACHE
 
 ```js
