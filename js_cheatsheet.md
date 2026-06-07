@@ -4,11 +4,17 @@
 
 ```js
 (async () => {
-  const base = 'https://api.github.com/repos/transinffo/ajax-search-for-woocommerce/contents';
+  const match = location.pathname.match(/^\/([^\/]+)\/([^\/]+)/);
+  if (!match) return console.log('Not a GitHub repo page');
+
+  const owner = match[1];
+  const repo = match[2].replace(/\/.*/, '');
+
+  const base = `https://api.github.com/repos/${owner}/${repo}/contents`;
 
   let output = '';
 
-  const walk = async (url, indent = '') => {
+  const walk = async (url, prefix = '') => {
     const res = await fetch(url);
     const items = await res.json();
 
@@ -17,12 +23,17 @@
       return;
     }
 
-    for (const item of items) {
-      const icon = item.type === 'dir' ? '├── ' : '└── ';
-      output += indent + icon + item.name + '\n';
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const isLast = i === items.length - 1;
+
+      const branch = isLast ? '└── ' : '├── ';
+      const nextPrefix = prefix + (isLast ? '    ' : '│   ');
+
+      output += prefix + branch + item.name + '\n';
 
       if (item.type === 'dir') {
-        await walk(item.url, indent + '│   ');
+        await walk(item.url, nextPrefix);
       }
     }
   };
@@ -31,12 +42,12 @@
 
   console.log(output);
 
-  // копирование в буфер
   try {
     await navigator.clipboard.writeText(output);
-    console.log('✅ Tree copied to clipboard');
+    console.log('✅ Copied to clipboard');
   } catch (e) {
-    console.log('❌ Copy failed:', e);
+    console.log('❌ Clipboard failed:', e);
+    console.log('📋 Copy manually from console output above');
   }
 })();
 ```
