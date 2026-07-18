@@ -4,6 +4,7 @@
 ## ✅ Смотрим блок в режиме разработчика
 
 ```php
+//site.ua/ua/test?dev=1
 <?php if (isset($_GET['dev']) && $_GET['dev'] == 1) { ?>
     <div data-dev="dev"></div>
 <?php } ?>
