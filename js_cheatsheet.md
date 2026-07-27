@@ -1,5 +1,29 @@
 # 🌈 JavaScript Cheat Sheet
 
+## 📦 Красивый вывод всех json массивов на странице в консоль браузера
+
+```js
+(() => {
+  // 1. Находим все script, у которых type содержит "json"
+  const scripts = Array.from(document.querySelectorAll('script[type*="json"]'));
+
+  console.group(`Найдено JSON-блоков: ${scripts.length}`);
+
+  scripts.forEach((script, index) => {
+    try {
+      const data = JSON.parse(script.textContent.trim());
+
+      // Выводим каждый блок отдельно — в консоли он свернут
+      console.log(`Блок #${index + 1} (${script.getAttribute('type')}):`, data);
+    } catch (e) {
+      console.warn(`Блок #${index + 1} содержит ошибку парсинга:`, script);
+    }
+  });
+
+  console.groupEnd();
+})();
+```
+
 ## 📦 Красивый вывод корневой структуры репозитория гитхаба
 
 ```js
