@@ -4,23 +4,63 @@
 
 ```js
 (() => {
-  // 1. Находим все script, у которых type содержит "json"
-  const scripts = Array.from(document.querySelectorAll('script[type*="json"]'));
+  // Укажите ключ, который нужно извлечь, или null / "" для вывода всего JSON
+  const TARGET_KEY = "author"; 
 
-  console.group(`Найдено JSON-блоков: ${scripts.length}`);
+  // Рекурсивная функция для поиска всех совпадений по ключу на любой глубине вложенности
+  const findByKey = (obj, keyToFind) => {
+    let results = [];
+    if (!obj || typeof obj !== 'object') return results;
 
-  scripts.forEach((script, index) => {
-    try {
-      const data = JSON.parse(script.textContent.trim());
-
-      // Выводим каждый блок отдельно — в консоли он свернут
-      console.log(`Блок #${index + 1} (${script.getAttribute('type')}):`, data);
-    } catch (e) {
-      console.warn(`Блок #${index + 1} содержит ошибку парсинга:`, script);
+    if (Array.isArray(obj)) {
+      for (const item of obj) {
+        results = results.concat(findByKey(item, keyToFind));
+      }
+    } else {
+      for (const [key, value] of Object.entries(obj)) {
+        if (key === keyToFind) {
+          results.push(value);
+        }
+        if (typeof value === 'object' && value !== null) {
+          results = results.concat(findByKey(value, keyToFind));
+        }
+      }
     }
-  });
+    return results;
+  };
 
-  console.groupEnd();
+  const jsonBlocks = Array.from(document.querySelectorAll('script[type*="application/ld+json"]'))
+    .map(script => {
+      let rawText = script.textContent.trim();
+      if (!rawText) return null;
+
+      try {
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {
+          // Обработка склеенных JSON-объектов
+          const fixedJsonText = '[' + rawText.replace(/\}\s*\{/g, '},{') + ']';
+          data = JSON.parse(fixedJsonText);
+        }
+
+        // Если задан TARGET_KEY, ищем его по всей структуре
+        if (TARGET_KEY && TARGET_KEY.trim() !== "") {
+          const found = findByKey(data, TARGET_KEY.trim());
+          return found.length > 0 ? found : null;
+        }
+
+        return data;
+      } catch (e) {
+        console.warn('Не удалось распарсить один из блоков:', script);
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .flat(); // Распаковываем найденные элементы в один плоский массив
+
+  // Выводим результат в виде форматированного JSON
+  console.log(JSON.stringify(jsonBlocks, null, 2));
 })();
 ```
 
